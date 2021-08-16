@@ -35,50 +35,16 @@ typedef enum {
     false, true
 } bool;
 
-typedef union
-{
-    uint8_t as_uint8;
-    uint16_t as_uint16;
-    uint32_t as_uint32;
-    int8_t as_int8;
-    int16_t as_int16;
-    int32_t as_int32;
-    float as_float;
-    
+ 
 #ifdef MVE_USE_64BIT_TYPES
-    uint64_t as_uint64;
-    int64_t as_int64;
-    double as_double;
+#define MVE_VALUE(name)  uint8_t name[8]
 #else
-    uint32_t as_uint64;
-    int32_t as_int64;
-    float as_double;
+#define MVE_VALUE(name)  uint8_t name[4]
 #endif
-} MVE_Value;
 
 
 struct MVE_VM;
 typedef struct MVE_VM MVE_VM;
-
-
-struct MVE_VM
-{
-    uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
-    uint16_t variables_count;
-    uint16_t external_functions_count;
-
-    MVE_Value reg_result;           // A register to store the result from operations and also the returned value from funnctions.
-
-    void (*fun_load_next)(MVE_VM *, uint8_t *, uint32_t, uint32_t);
-
-    void *external_functions[MVE_EXTERNAL_FUNCTIONS_LIMIT];
-
-    uint32_t buffer_index;                      // The current position in the program buffer.
-    uint8_t program_buffer[MVE_BUFFER_SIZE];    // Buffer to store the next instructions of the program to be processed.
-
-    uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
-    uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
-};
 
 
 /**
@@ -115,5 +81,13 @@ void mve_start(MVE_VM *vm);
  * @param vm VM to execute the next instruction.
  */
 void mve_run(MVE_VM *vm);
+
+
+/**
+ * @brief Indicates whether the VM is running or not.
+ * 
+ * @param vm The VM to check if is running.
+ */
+bool mve_is_running(MVE_VM *vm);
 
 #endif

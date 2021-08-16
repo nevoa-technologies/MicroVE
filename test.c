@@ -6,7 +6,6 @@
 #define MVE_HEAP_SIZE 128
 
 //#define MVE_USE_64BIT_TYPES
-
 //#define MVE_BIG_ENDIAN
 
 #include "mve.c"

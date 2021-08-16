@@ -29,6 +29,28 @@
 #pragma endregion
 
 
+struct MVE_VM
+{
+    uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
+    uint16_t variables_count;
+    uint16_t external_functions_count;
+
+    MVE_VALUE(reg_result);           // A register to store the result from operations and also the returned value from funnctions.
+
+    void (*fun_load_next)(MVE_VM *, uint8_t *, uint32_t, uint32_t);
+
+    void *external_functions[MVE_EXTERNAL_FUNCTIONS_LIMIT];
+
+    uint32_t buffer_index;                      // The current position in the program buffer.
+    uint8_t program_buffer[MVE_BUFFER_SIZE];    // Buffer to store the next instructions of the program to be processed.
+
+    uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
+    uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
+
+    bool is_running;
+};
+
+
 static inline bool string_equals(const char *str1, const char *str2) {
     uint16_t i = 0;
 
@@ -182,6 +204,7 @@ static bool mve_load_header(MVE_VM *vm)
 
 bool mve_init(MVE_VM *vm, void (*fun_load_next)(MVE_VM *, uint8_t *, uint32_t, uint32_t))
 {
+    vm->is_running = false;
     vm->program_index = 0;
     vm->buffer_index = 0;
     vm->fun_load_next = fun_load_next;
@@ -222,6 +245,8 @@ void mve_link_function(MVE_VM *vm, const char *name, void *function)
 
 void mve_start(MVE_VM *vm)
 {
+    vm->is_running = true;
+
     // TODO: Implementation
 }
 
@@ -229,4 +254,9 @@ void mve_start(MVE_VM *vm)
 void mve_run(MVE_VM *vm)
 {
     // TODO: Implementation
+}
+
+
+bool mve_is_running(MVE_VM *vm) {
+    return vm->is_running;
 }
