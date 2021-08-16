@@ -1,8 +1,11 @@
 #ifndef MVE_H
 #define MVE_H
 
+
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+
 
 #define MVE_VERSION_MAJOR ((uint16_t)1) // Bytecode major version. The program must have the same version.
 #define MVE_VERSION_MINOR ((uint16_t)5) // Bytecode minor version. The program must have a lower or same version.

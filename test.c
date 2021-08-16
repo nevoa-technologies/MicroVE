@@ -35,7 +35,7 @@ void load_next(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t read_l
 
 int hello(int x)
 {
-    printf("Hello");
+    printf("Hello ");
 }
 
 

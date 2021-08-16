@@ -1,6 +1,4 @@
 #include "mve.h"
-#include <stdio.h>
-#include <string.h>
 
 
 #pragma region BINARY_CONVERSION
