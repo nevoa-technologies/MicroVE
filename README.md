@@ -25,3 +25,56 @@ You can declare a few defines in your C project to indicate the processor specs 
 | `MVE_STACK_SIZE` | 128 | The amount of memory used by the stack. This is used to store variables and other stuff. |
 | `MVE_HEAP_SIZE` | 128 | The amount of memory used by the heap. This is used to store name of external functions and other runtime values. The external function names are cleared once the VM starts. |
 | `MVE_USE_64BIT_TYPES` | `undefined` | Indicate if you want to use 64 bit types such as `int64` and `double`. Leave it undefined if you don't. |
+| `MVE_BIG_ENDIAN` | `undefined` | Indicate if the architecture you're building for is big endian. Leave it undefined if it is little endian. |
+
+## Basic Example
+```c
+#include "mve.h"
+#include <stdio.h>
+
+#define MVE_EXTERNAL_FUNCTIONS_LIMIT 8
+#define MVE_BUFFER_SIZE 128
+#define MVE_STACK_SIZE 128
+#define MVE_HEAP_SIZE 128
+
+void load_next(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t read_length) {
+    // Read the next bytecode block of your program.
+    // Simple example, loading from a file:  
+    FILE *fileptr;
+    long filelen;
+
+    fileptr = fopen("test.bin", "rb");
+    fseek(fileptr, 0, SEEK_END);
+    filelen = ftell(fileptr);                 // Get the length of the file.
+
+    fseek(fileptr, read_index, SEEK_SET);     // Go to the given index, to read.
+
+    long length = filelen - read_index;       // Calculate the amount of bytes to read.
+
+    if (read_length < length)                 // If the given length to read is smaller than the file length, 
+        length = read_length;                 // we use the given length.
+
+    fread(buffer, length, 1, fileptr);        // Read the bytes from the given index to the smaller length, into the buffer.
+    fclose(fileptr);  
+}
+
+void hello() {
+    printf("Hello!");
+}
+
+int main() {
+    MVE_VM vm;
+    mve_init(&vm, &load_next);
+    
+    mve_link_function(&vm, "hello", (void *)&hello);
+
+    mve_start(&vm);
+
+    while (mve_is_running(&vm)) {
+        mve_run(&vm);
+    }
+
+    return 0;
+}
+
+```
