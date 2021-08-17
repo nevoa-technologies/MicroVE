@@ -1,8 +1,8 @@
 #include "mve.h"
 
 
-#pragma region BINARY_CONVERSION
 #ifdef MVE_BIG_ENDIAN
+
 #define BYTES_TO_UINT8(buffer, offset) (uint8_t)(buffer[offset + 1])
 #define BYTES_TO_UINT16(buffer, offset) (uint16_t)((buffer[offset] << 8) + buffer[offset + 1])
 #define BYTES_TO_UINT32(buffer, offset) (uint32_t)((buffer[offset] << 24) + (buffer[offset + 1] << 16) + (buffer[offset + 2] << 8) + buffer[offset + 3])
@@ -26,7 +26,6 @@
 #define BYTES_TO_INT64(buffer, offset) (int64_t)(buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16) + (buffer[offset + 3] << 24) + (buffer[offset + 4] << 32) + (buffer[offset + 5] << 40) + (buffer[offset + 6] << 48) + (buffer[offset + 7] << 56))
 
 #endif
-#pragma endregion
 
 
 struct MVE_VM {
@@ -232,7 +231,7 @@ void mve_link_function(MVE_VM *vm, const char *name, void *function) {
 
         heap_index++;
 
-        if (string_equals(vm->heap + start, name))
+        if (string_equals((const char *) vm->heap + start, name))
         {
             vm->external_functions[function_index] = function;
             return;
@@ -251,6 +250,8 @@ void mve_start(MVE_VM *vm) {
 
 
 void mve_run(MVE_VM *vm) {
+    vm->is_running = false;
+    
     // TODO: Implementation
 }
 
