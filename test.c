@@ -31,7 +31,7 @@ void load_next_block(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t 
 }
 
 
-int hello(int x) {
+void hello() {
     printf("Hello ");
 }
 
@@ -47,7 +47,7 @@ int main() {
 
     mve_start(&vm);
 
-    printf("%d\n", sizeof(vm));
+    printf("%ld\n", sizeof(vm));
 
     return 0;
 }
