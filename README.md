@@ -4,8 +4,9 @@ MicroVE IT'S STILL IN EARLY DEVEOPMENT! IT SHOULD NOT BE USED AS IT IS!
 <br>
 <br>
 
-![logo](https://github.com/nevoa-dev/micro-ve/blob/master/icon.png)
+![icon](https://raw.githubusercontent.com/nevoa-dev/micro-ve/master/icon.png)
 
+[![CMake](https://github.com/nevoa-dev/micro-ve/actions/workflows/cmake.yml/badge.svg?branch=master)](https://github.com/nevoa-dev/micro-ve/actions/workflows/cmake.yml)
 
 # A Virtual Environment for Embedded Systems.
 MicroVE aims a lightweight solution for a dynamic code execution on limited devices. All the memory usage is limited at compile-time, so there is no runtime memory allocation. This allows you to run a program under **500 bytes** of RAM (excluding the program itself). The main purpose is to be added to a project and run under a microcontroller, but it can also be embeddable into any other kind of project such as a game or a webserver (Although it may lose kind of its purpose in that environments).
