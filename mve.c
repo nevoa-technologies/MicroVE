@@ -27,26 +27,8 @@
 
 #endif
 
-
-struct MVE_VM {
-    uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
-    uint16_t variables_count;
-    uint16_t external_functions_count;
-
-    MVE_VALUE(reg_result);           // A register to store the result from operations and also the returned value from funnctions.
-
-    void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t);
-
-    void *external_functions[MVE_EXTERNAL_FUNCTIONS_LIMIT];
-
-    uint32_t buffer_index;                      // The current position in the program buffer.
-    uint8_t program_buffer[MVE_BUFFER_SIZE];    // Buffer to store the next instructions of the program to be processed.
-
-    uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
-    uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
-
-    bool is_running;
-};
+#define true    1
+#define false   0
 
 
 static inline bool string_equals(const char *str1, const char *str2) {
@@ -251,7 +233,7 @@ void mve_start(MVE_VM *vm) {
 
 void mve_run(MVE_VM *vm) {
     vm->is_running = false;
-    
+
     // TODO: Implementation
 }
 
