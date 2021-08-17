@@ -29,15 +29,14 @@
 #pragma endregion
 
 
-struct MVE_VM
-{
+struct MVE_VM {
     uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
     uint16_t variables_count;
     uint16_t external_functions_count;
 
     MVE_VALUE(reg_result);           // A register to store the result from operations and also the returned value from funnctions.
 
-    void (*fun_load_next)(MVE_VM *, uint8_t *, uint32_t, uint32_t);
+    void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t);
 
     void *external_functions[MVE_EXTERNAL_FUNCTIONS_LIMIT];
 
@@ -74,8 +73,7 @@ static inline bool string_equals(const char *str1, const char *str2) {
  * 
  * @param vm VM to load the bytes into.
  */
-static void mve_load_next(MVE_VM *vm)
-{
+static void mve_load_next_block(MVE_VM *vm) {
 
     // TODO: This may cause infinite looping. Add verifications in the future.
     //if (vm->buffer_index == 0)
@@ -91,16 +89,20 @@ static void mve_load_next(MVE_VM *vm)
     }
 
     // The bytes to load, are going to be placed in the buffer after the bytes moved to the start.
-    uint8_t *buffer = vm->program_buffer + (MVE_BUFFER_SIZE - vm->buffer_index);
+    uint8_t *buffer = vm->program_buffer + index;
     uint32_t length = vm->buffer_index;
 
-    if (vm->buffer_index == 0)
+    if (vm->buffer_index == 0) {
         length = MVE_BUFFER_SIZE;
+        buffer = vm->program_buffer;
+    }
 
-    vm->program_index += vm->buffer_index;
+
     vm->buffer_index = 0;
 
-    vm->fun_load_next(vm, buffer, vm->program_index, length);
+    vm->fun_load_next_block(vm, buffer, vm->program_index, length);
+
+    vm->program_index += length;
 }
 
 
@@ -115,8 +117,8 @@ static void mve_load_next(MVE_VM *vm)
  * @param size Size to ensure the buffer has after the index.
  */
 inline static void mve_ensure_buffer_size_at(MVE_VM *vm, uint16_t index, uint8_t length) {
-    if (index + length >= MVE_BUFFER_SIZE)
-        mve_load_next(vm);
+    if (index + length > MVE_BUFFER_SIZE)
+        mve_load_next_block(vm);
 }
 
 
@@ -170,9 +172,7 @@ inline static uint8_t mve_request_uint8(MVE_VM *vm) {
  * 
  * @param vm VM to load the header.
  */
-static bool mve_load_header(MVE_VM *vm)
-{
-    mve_load_next(vm);
+static bool mve_load_header(MVE_VM *vm) {
 
     uint16_t major_version = BYTES_TO_UINT16(vm->program_buffer, 0);
     uint16_t minor_version = BYTES_TO_UINT16(vm->program_buffer, 2);
@@ -202,25 +202,23 @@ static bool mve_load_header(MVE_VM *vm)
 }
 
 
-bool mve_init(MVE_VM *vm, void (*fun_load_next)(MVE_VM *, uint8_t *, uint32_t, uint32_t))
-{
+bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t)) {
     vm->is_running = false;
     vm->program_index = 0;
     vm->buffer_index = 0;
-    vm->fun_load_next = fun_load_next;
+    vm->fun_load_next_block = fun_load_next_block;
 
     for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
         vm->external_functions[i] = NULL;
     }
 
-    mve_load_next(vm);
+    mve_load_next_block(vm);
 
     return mve_load_header(vm);
 }
 
 
-void mve_link_function(MVE_VM *vm, const char *name, void *function)
-{
+void mve_link_function(MVE_VM *vm, const char *name, void *function) {
     uint32_t heap_index = 0;
     uint16_t function_index = 0;
 
@@ -228,9 +226,11 @@ void mve_link_function(MVE_VM *vm, const char *name, void *function)
 
         uint32_t start = heap_index;
 
-        do {
+        while (vm->heap[heap_index] != '\0') {
             heap_index++;
-        } while (vm->heap[heap_index] != '\0'); 
+        } 
+
+        heap_index++;
 
         if (string_equals(vm->heap + start, name))
         {
@@ -243,16 +243,14 @@ void mve_link_function(MVE_VM *vm, const char *name, void *function)
 }
 
 
-void mve_start(MVE_VM *vm)
-{
+void mve_start(MVE_VM *vm) {
     vm->is_running = true;
 
     // TODO: Implementation
 }
 
 
-void mve_run(MVE_VM *vm)
-{
+void mve_run(MVE_VM *vm) {
     // TODO: Implementation
 }
 

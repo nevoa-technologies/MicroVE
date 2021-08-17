@@ -2,7 +2,6 @@
 #define MVE_H
 
 
-#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -54,7 +53,7 @@ typedef struct MVE_VM MVE_VM;
  * @param fun_load_next Function that is going to be called whenever the VM needs to load the next bytes (VM, buffer to load into, index in the program, amount to read).
  * @return Returns true if the VM was initiated successfully. False if an error ocurred, such as incompatible byte code.
  */
-bool mve_init(MVE_VM *vm, void (*fun_load_next)(MVE_VM *, uint8_t *, uint32_t, uint32_t));
+bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t));
 
 
 /**
