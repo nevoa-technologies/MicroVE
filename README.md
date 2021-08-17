@@ -35,7 +35,7 @@ At the moment, MicroVE is not usable. The version 1.0 will be released as soon a
 <br>
 
 # Usage
-You just need to add the `mve.c` and `mve.h` files into your project and it should work. There is not external libraries apart from the standard ones.
+You just need to add the `mve.c` and `mve.h` files into your project and it should work. There is no external libraries apart from the standard ones.
 
 ## Defines
 You can declare a few defines in your C project to indicate the processor specs and to limit the memory usage.
