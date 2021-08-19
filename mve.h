@@ -46,9 +46,6 @@ typedef struct MVE_VM MVE_VM;
 
 
 struct MVE_VM {
-    uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
-    uint16_t variables_count;
-    uint16_t external_functions_count;
 
     MVE_VALUE(reg_result);           // A register to store the result from operations and also the returned value from funnctions.
 
@@ -57,15 +54,32 @@ struct MVE_VM {
     void *external_functions[MVE_EXTERNAL_FUNCTIONS_LIMIT];
 
     uint32_t buffer_index;                      // The current position in the program buffer.
+
+#ifdef MVE_LOCAL_PROGRAM
+    uint8_t *program_buffer;    // Buffer to store the next instructions of the program to be processed.
+#else
+    uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
     uint8_t program_buffer[MVE_BUFFER_SIZE];    // Buffer to store the next instructions of the program to be processed.
+#endif
 
     uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
     uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
 
+    uint16_t external_functions_count;
     bool is_running;
 };
 
 
+#ifdef MVE_LOCAL_PROGRAM
+/**
+ * @brief Prepares the VM to run. Loads the header of the program and sets up all the required data.
+ * 
+ * @param vm VM to be loaded.
+ * @param program Program byte array to execute.
+ * @return Returns true if the VM was initiated successfully. False if an error ocurred, such as incompatible byte code.
+ */
+bool mve_init(MVE_VM *vm, uint8_t *program);
+#else
 /**
  * @brief Prepares the VM to run. Loads the header of the program and sets up all the required data.
  * 
@@ -74,7 +88,7 @@ struct MVE_VM {
  * @return Returns true if the VM was initiated successfully. False if an error ocurred, such as incompatible byte code.
  */
 bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t));
-
+#endif
 
 /**
  * @brief Links a C function into the VM. Use this if you call functions from the program in the VM.

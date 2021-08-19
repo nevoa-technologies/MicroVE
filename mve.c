@@ -56,6 +56,8 @@ static inline bool string_equals(const char *str1, const char *str2) {
  */
 static void mve_load_next_block(MVE_VM *vm) {
 
+#ifdef MVE_LOCAL_PROGRAM
+#else
     // TODO: This may cause infinite looping. Add verifications in the future.
     //if (vm->buffer_index == 0)
     //    return;
@@ -84,6 +86,7 @@ static void mve_load_next_block(MVE_VM *vm) {
     vm->fun_load_next_block(vm, buffer, vm->program_index, length);
 
     vm->program_index += length;
+#endif
 }
 
 
@@ -183,11 +186,16 @@ static bool mve_load_header(MVE_VM *vm) {
 }
 
 
+#ifdef MVE_LOCAL_PROGRAM
+bool mve_init(MVE_VM *vm, uint8_t *program) {
+    vm->program_buffer = program;
+#else
 bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t)) {
-    vm->is_running = false;
-    vm->program_index = 0;
-    vm->buffer_index = 0;
     vm->fun_load_next_block = fun_load_next_block;
+    vm->program_index = 0;
+#endif
+    vm->is_running = false;
+    vm->buffer_index = 0;
 
     for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
         vm->external_functions[i] = NULL;
