@@ -23,12 +23,14 @@ At the moment, MicroVE is not usable. The version 1.0 will be released as soon a
 - [x] Interpret the program header
 - [x] Link C functions into the virtual machine
 - Execution
-    - [ ] Declare variables
-    - [ ] Assign values to variables
+    - [ ] Push and pop values from the stack
+    - [ ] Load values from the stack into registers and from registers into the stack
     - [ ] Call external linked functions
     - [ ] Basic arithmetic operations (sum, subtraction, multiplication and division)
-    - [ ] Comparsions (if, else)
+    - [ ] Branches
+    - [ ] Comparsions and logical operators
     - [ ] Loops
+    - [ ] Floating point values
     - [ ] Heap management (allocate memory in the VM's heap to store data such as strings)
 
 
