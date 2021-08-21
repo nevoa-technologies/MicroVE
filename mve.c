@@ -1,32 +1,6 @@
 #include "mve.h"
 
 
-#ifdef MVE_BIG_ENDIAN
-
-#define BYTES_TO_UINT8(buffer, offset) (uint8_t)(buffer[offset + 1])
-#define BYTES_TO_UINT16(buffer, offset) (uint16_t)((buffer[offset] << 8) + buffer[offset + 1])
-#define BYTES_TO_UINT32(buffer, offset) (uint32_t)((buffer[offset] << 24) + (buffer[offset + 1] << 16) + (buffer[offset + 2] << 8) + buffer[offset + 3])
-#define BYTES_TO_UINT64(buffer, offset) (uint64_t)((buffer[offset] << 56) + (buffer[offset + 1] << 48) + (buffer[offset + 2] << 40) + (buffer[offset + 3] << 32) + (buffer[offset + 4] << 24) + (buffer[offset + 5] << 16) + (buffer[offset + 6 << 8) + buffer[offset + 7])
-
-#define BYTES_TO_INT8(buffer, offset) (int8_t)(buffer[offset + 1])
-#define BYTES_TO_INT16(buffer, offset) (int16_t)((buffer[offset] << 8) + buffer[offset + 1])
-#define BYTES_TO_INT32(buffer, offset) (int32_t)((buffer[offset] << 24) + (buffer[offset + 1] << 16) + (buffer[offset + 2] << 8) + buffer[offset + 3])
-#define BYTES_TO_INT64(buffer, offset) (int64_t)((buffer[offset] << 56) + (buffer[offset + 1] << 48) + (buffer[offset + 2] << 40) + (buffer[offset + 3] << 32) + (buffer[offset + 4] << 24) + (buffer[offset + 5] << 16) + (buffer[offset + 6 << 8) + buffer[offset + 7])
-
-#else
-
-#define BYTES_TO_UINT8(buffer, offset) (uint8_t)(buffer[offset])
-#define BYTES_TO_UINT16(buffer, offset) (uint16_t)(buffer[offset] + (buffer[offset + 1] << 8))
-#define BYTES_TO_UINT32(buffer, offset) (uint32_t)(buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16) + (buffer[offset + 3] << 24))
-#define BYTES_TO_UINT64(buffer, offset) (uint64_t)(buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16) + (buffer[offset + 3] << 24) + (buffer[offset + 4] << 32) + (buffer[offset + 5] << 40) + (buffer[offset + 6] << 48) + (buffer[offset + 7] << 56))
-
-#define BYTES_TO_INT8(buffer, offset) (int8_t)(buffer[offset])
-#define BYTES_TO_INT16(buffer, offset) (int16_t)(buffer[offset] + (buffer[offset + 1] << 8))
-#define BYTES_TO_INT32(buffer, offset) (int32_t)(buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16) + (buffer[offset + 3] << 24))
-#define BYTES_TO_INT64(buffer, offset) (int64_t)(buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16) + (buffer[offset + 3] << 24) + (buffer[offset + 4] << 32) + (buffer[offset + 5] << 40) + (buffer[offset + 6] << 48) + (buffer[offset + 7] << 56))
-
-#endif
-
 #define true    1
 #define false   0
 
@@ -65,7 +39,7 @@ static void mve_load_next_block(MVE_VM *vm) {
     int index = 0;
 
     // Move the last bytes to the start of the buffer.
-    for (int i = vm->buffer_index; i < MVE_BUFFER_SIZE; i++)
+    for (uint32_t i = vm->buffer_index; i < MVE_BUFFER_SIZE; i++)
     {
         vm->program_buffer[index] = vm->program_buffer[i];
         index++;
@@ -128,8 +102,23 @@ inline static void mve_ensure_buffer_size(MVE_VM *vm, uint8_t length) {
  */
 inline static uint32_t mve_request_uint32(MVE_VM *vm) {
     mve_ensure_buffer_size(vm, 4);
-    uint32_t value = BYTES_TO_UINT32(vm->program_buffer, vm->buffer_index);
+    uint32_t value = MVE_BYTES_TO_UINT32(vm->program_buffer, vm->buffer_index);
     vm->buffer_index += 4;
+
+    return value;   
+}
+
+
+/**
+ * @brief Returns the next uint16 from the program buffer and increases the buffer index.
+ * 
+ * @param vm VM to read the next byte.
+ * @return Returns the value readed.
+ */
+inline static uint32_t mve_request_uint16(MVE_VM *vm) {
+    mve_ensure_buffer_size(vm, 2);
+    uint32_t value = MVE_BYTES_TO_UINT16(vm->program_buffer, vm->buffer_index);
+    vm->buffer_index += 2;
 
     return value;   
 }
@@ -158,8 +147,8 @@ inline static uint8_t mve_request_uint8(MVE_VM *vm) {
  */
 static bool mve_load_header(MVE_VM *vm) {
 
-    uint16_t major_version = BYTES_TO_UINT16(vm->program_buffer, 0);
-    uint16_t minor_version = BYTES_TO_UINT16(vm->program_buffer, 2);
+    uint16_t major_version = MVE_BYTES_TO_UINT16(vm->program_buffer, 0);
+    uint16_t minor_version = MVE_BYTES_TO_UINT16(vm->program_buffer, 2);
 
     if (major_version != MVE_VERSION_MAJOR)
         return false;
@@ -192,10 +181,12 @@ bool mve_init(MVE_VM *vm, uint8_t *program) {
 #else
 bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t)) {
     vm->fun_load_next_block = fun_load_next_block;
-    vm->program_index = 0;
 #endif
+    vm->program_index = 0;
     vm->is_running = false;
     vm->buffer_index = 0;
+    vm->stack_index = 0;
+    vm->branch_index = 0;
 
     for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
         vm->external_functions[i] = NULL;
@@ -207,7 +198,7 @@ bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint3
 }
 
 
-void mve_link_function(MVE_VM *vm, const char *name, void *function) {
+void mve_link_function(MVE_VM *vm, const char *name, void (*function) (MVE_VM *)) {
     uint32_t heap_index = 0;
     uint16_t function_index = 0;
 
@@ -234,18 +225,83 @@ void mve_link_function(MVE_VM *vm, const char *name, void *function) {
 
 void mve_start(MVE_VM *vm) {
     vm->is_running = true;
+}
 
-    // TODO: Implementation
+
+void mve_op_push(MVE_VM *vm) {
+
+    // The size of the value to push.
+    uint8_t size = mve_request_uint8(vm);
+
+    MVE_ASSERT(MVE_STACK_SIZE > vm->stack_index + size, vm, MVE_ERROR_STACK_OUT_OF_RANGE, "PUSH failed! Stack out of range. The index cannot be bigger than the stack.");
+
+    // Write the value into the stack.
+    for (uint16_t i = 0; i < size; i++)
+        vm->stack[vm->stack_index + i] = mve_request_uint8(vm);
+
+    vm->stack_index += size;
+}
+
+
+void mve_op_pop(MVE_VM *vm) {
+
+    // The size of the value to pop.
+    uint8_t size = mve_request_uint8(vm);
+
+    MVE_ASSERT(vm->stack_index - size > 0, vm, MVE_ERROR_STACK_OUT_OF_RANGE, "POP failed! Stack out of range. The index cannot be negative.");
+
+    vm->stack_index -= size;
+}
+
+
+void mve_op_callex(MVE_VM *vm) {
+
+    uint16_t function_index = mve_request_uint16(vm);
+
+    MVE_ASSERT(vm->external_functions_count > function_index, vm, MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE, "CALLEX failed! Invalid function index.");
+
+    uint8_t params_count = mve_request_uint8(vm);
+    int total_length = 0;
+
+    for (int i = 0; i < params_count; i++)
+        total_length += mve_request_uint8(vm);
+
+    void (*func) () = vm->external_functions[0];
+    func(vm);
 }
 
 
 void mve_run(MVE_VM *vm) {
-    vm->is_running = false;
 
-    // TODO: Implementation
+    uint8_t next_operation = mve_request_uint8(vm);
+
+    switch (next_operation)
+    {
+    case MVE_OP_PUSH:
+        mve_op_push(vm);
+        break;
+    case MVE_OP_POP:
+        mve_op_pop(vm);
+        break;
+    case MVE_OP_CALLEX:
+        mve_op_callex(vm);
+        break;
+    case MVE_OP_EOP:
+        mve_stop(vm);
+        break;
+    default:
+        MVE_ASSERT(false, vm, MVE_ERROR_UNDEFINED_OP, "Undefined Instruction! Code does not exist.");
+        mve_stop(vm);
+        break;
+    }
 }
 
 
 bool mve_is_running(MVE_VM *vm) {
     return vm->is_running;
+}
+
+
+void mve_stop(MVE_VM *vm) {
+    vm->is_running = false;
 }

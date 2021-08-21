@@ -1,3 +1,5 @@
+#include "stdio.h"
+
 #define MVE_EXTERNAL_FUNCTIONS_LIMIT 8
 
 #define MVE_BUFFER_SIZE 128
@@ -5,7 +7,11 @@
 #define MVE_STACK_SIZE 128
 #define MVE_HEAP_SIZE 128
 
+#define MVE_BRANCH_LIMIT 8
+
 #define MVE_LOCAL_PROGRAM
+
+#define MVE_ERROR_LOG(vm, program_index, error_id, msg) printf("%s Program index: %u.", msg, program_index);
 
 //#define MVE_USE_64BIT_TYPES
 //#define MVE_BIG_ENDIAN
@@ -14,13 +20,6 @@
 #include <stdio.h>
 
 void load_next_block(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t read_length) {
-
-    uint8_t program[] = { 0x01, 0x00, 0x03, 0x00, 0x02, 0x00, 0x00, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x00, 0x66, 0x75, 0x6E, 0x63, 0x32, 0x00 };
-
-    memcpy(buffer, program + read_index, read_length);
-
-    return;
-
     FILE *fileptr;
     long filelen;
 
@@ -35,37 +34,57 @@ void load_next_block(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t 
     if (read_length < length)                   // If the given length to read is smaller than the file length,
         length = read_length;                   // we use the given length.
 
-    fread(buffer, length, 1, fileptr);          // Read the bytes from the given index to the smaller length, into the buffer.
+    if (fread(buffer, length, 1, fileptr) !=  1)          // Read the bytes from the given index to the smaller length, into the buffer.
+        printf("Error reading program file, index: %u, length: %u\n", read_index, read_length);
+
     fclose(fileptr);             
 }
 
+typedef struct {
+    char c1;
+    char c2;
+} asasd;
 
-void hello() {
-    printf("Hello ");
+
+void hello(MVE_VM *vm) {
+
+    int i1 = MVE_GET_STACK_INT32(vm, 4);
+    char c1 = MVE_GET_STACK_INT8(vm, 5);
+    char c2 = MVE_GET_STACK_INT8(vm, 6);
+
+    printf("Hello: %d %c %c.", i1, c1, c2);
 }
 
 
 int main() {
-
+    
     uint8_t program[] = {   0x01, 0x00, // Verion Major
                             0x03, 0x00, // Version Minor
                             0x02, 0x00, 0x00, 0x00, // External functions count
                             'h', 'e', 'l', 'l', 'o', 0x00, // Function 1
-                            'f', 'u', 'n', 'c', '2', 0x00  // Function 2
+                            'f', 'u', 'n', 'c', '2', 0x00,  // Function 2,
+                            MVE_OP_PUSH, 2, 'a', 'b',
+                            MVE_OP_PUSH, 2, 'c', 'd',
+                            MVE_OP_POP, 1,
+                            MVE_OP_PUSH, 2, 'e', 'f',
+                            MVE_OP_PUSH, 4, 0xff, 0xff, 00, 00,
+                            MVE_OP_CALLEX, 0, 0, 1, 2,
+                            MVE_OP_EOP
     };
 
     MVE_VM vm;
     //mve_init(&vm, &load_next_block);
     mve_init(&vm, program);
 
-    mve_link_function(&vm, "hello", (void *)&hello);
-
-    void (*func) () = vm.external_functions[0];
-    func();
+    mve_link_function(&vm, "hello", &hello);
 
     mve_start(&vm);
 
     printf("%ld\n", sizeof(vm));
+
+    while (mve_is_running(&vm)) {
+        mve_run(&vm);
+    }
 
     return 0;
 }
