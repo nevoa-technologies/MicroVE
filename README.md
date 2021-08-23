@@ -44,11 +44,14 @@ You can declare a few defines in your C project to indicate the processor specs 
 | Name	| Default Value | Description	|
 | - | - | -	|
 | `MVE_EXTERNAL_FUNCTIONS_LIMIT` | 8 | The maximum amount of external functions. (External functions are functions from your C project that will be called through your MicroVE program) |
+| `MVE_BRANCH_LIMIT` | 8 | The maximum amount of branches. |
 | `MVE_BUFFER_SIZE` | 128 | The amount of memory used by the program buffer. This is used to store the program. |
 | `MVE_STACK_SIZE` | 128 | The amount of memory used by the stack. This is used to store variables and other stuff. |
 | `MVE_HEAP_SIZE` | 128 | The amount of memory used by the heap. This is used to store name of external functions and other runtime values. The external function names are cleared once the VM starts. |
 | `MVE_USE_64BIT_TYPES` | `undefined` | Indicate if you want to use 64 bit types such as `int64` and `double`. Leave it undefined if you don't. |
 | `MVE_BIG_ENDIAN` | `undefined` | Indicate if the architecture you're building for is big endian. Leave it undefined if it is little endian. |
+| `MVE_LOCAL_PROGRAM` | `undefined` | Indicate if the program is in the memory. If this is undefined, then the program will be loaded at runtime. |
+| `MVE_ERROR_LOG` | `undefined` | Use to define a function to be called whenever an error is thrown. Example: `#define MVE_ERROR_LOG(vm, program_index, error_id, msg) printf("%s Program index: %u.", msg, program_index);` |
 
 ## Basic Example
 ```c
