@@ -56,7 +56,7 @@
 #define MVE_OP_PUSH                     (uint8_t) 1             // Push a value into the stack.
 #define MVE_OP_POP                      (uint8_t) 2             // Pop a value from the stack.
 #define MVE_OP_LDR                      (uint8_t) 3             // Load bytes from the stack into a register.
-#define MVE_OP_STR                      (uint8_t) 4
+#define MVE_OP_STR                      (uint8_t) 4             // Set bytes of the stack from a register.
 #define MVE_OP_MOV                      (uint8_t) 5
 #define MVE_OP_NEG                      (uint8_t) 6
 #define MVE_OP_BX                       (uint8_t) 7

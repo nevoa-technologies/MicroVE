@@ -70,6 +70,7 @@ int main() {
                             MVE_OP_LDR, 0, 1, 0, 0, 0, 1,
                             MVE_OP_LDR, 1, 2, 0, 0, 0, 1,
                             MVE_OP_ADD, 0, 0, 1,
+                            MVE_OP_STR, 0, 1, 0, 0, 0, 1,
                             MVE_OP_EOP
     };
 
