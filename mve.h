@@ -51,27 +51,28 @@
 #define MVE_ERROR_UNDEFINED_OP                          57      // Happens when the OP of the next instruction is not recognized.
 
 
-#define MVE_OP_PUSH                     (uint8_t) 1
-#define MVE_OP_POP                      (uint8_t) 2
-#define MVE_OP_LDR                      (uint8_t) 3
+#define MVE_OP_EOP                      (uint8_t) 0             // 	Indicates the end of the program. Stops the virtual machine.
+
+#define MVE_OP_PUSH                     (uint8_t) 1             // Push a value into the stack.
+#define MVE_OP_POP                      (uint8_t) 2             // Pop a value from the stack.
+#define MVE_OP_LDR                      (uint8_t) 3             // Load bytes from the stack into a register.
 #define MVE_OP_STR                      (uint8_t) 4
 #define MVE_OP_MOV                      (uint8_t) 5
-#define MVE_OP_MVN                      (uint8_t) 6
-#define MVE_OP_NEG                      (uint8_t) 7
-#define MVE_OP_BX                       (uint8_t) 8
-#define MVE_OP_CALLEX                   (uint8_t) 9
-#define MVE_OP_SUM                      (uint8_t) 10
-#define MVE_OP_SUB                      (uint8_t) 11
-#define MVE_OP_MUL                      (uint8_t) 12
-#define MVE_OP_DIV                      (uint8_t) 13
-#define MVE_OP_CMP                      (uint8_t) 14
-#define MVE_OP_AND                      (uint8_t) 15
-#define MVE_OP_ORR                      (uint8_t) 16
-#define MVE_OP_JIF                      (uint8_t) 17
+#define MVE_OP_NEG                      (uint8_t) 6
+#define MVE_OP_BX                       (uint8_t) 7
+#define MVE_OP_CALLEX                   (uint8_t) 8             // Call a linked external function.
+#define MVE_OP_ADD                      (uint8_t) 9             // Adds 2 registers.
+#define MVE_OP_SUB                      (uint8_t) 10
+#define MVE_OP_MUL                      (uint8_t) 11
+#define MVE_OP_DIV                      (uint8_t) 12
+#define MVE_OP_CMP                      (uint8_t) 13
+#define MVE_OP_AND                      (uint8_t) 14
+#define MVE_OP_ORR                      (uint8_t) 15
+#define MVE_OP_JIF                      (uint8_t) 16
 
 #define MVE_OP_ITOF                     (uint8_t) 64
 #define MVE_OP_FTOI                     (uint8_t) 65
-#define MVE_OP_FSUM                     (uint8_t) 66
+#define MVE_OP_FADD                     (uint8_t) 66
 #define MVE_OP_FSUB                     (uint8_t) 67
 #define MVE_OP_FMUL                     (uint8_t) 68
 #define MVE_OP_FDIV                     (uint8_t) 69
@@ -80,8 +81,6 @@
 
 #define MVE_OP_ALLOC                    (uint8_t) 128
 #define MVE_OP_FREE                     (uint8_t) 129
-
-#define MVE_OP_EOP                      (uint8_t) 255
 
 
 #ifdef MVE_BIG_ENDIAN
@@ -128,14 +127,16 @@ typedef uint8_t bool;
 
  
 #ifdef MVE_USE_64BIT_TYPES
-typedef struct {
+typedef union {
     uint64_t i;
-    double   f;
+    double f;
+    uint8_t b[8];
 } MVE_Value;
 #else
-typedef struct  {
+typedef union  {
     uint32_t i;
-    float   f;
+    float f;
+    uint8_t b[4];
 } MVE_Value;
 #endif
 
@@ -149,11 +150,27 @@ typedef struct {
 } MVE_Branch_Info;
 
 
+typedef union
+{
+    struct
+    {
+        MVE_Value r0;
+        MVE_Value r1;
+        MVE_Value r2;
+        MVE_Value r3;
+        MVE_Value r4;
+        MVE_Value rr;
+    };
+    
+    MVE_Value all[6];
+} MVE_Registers;
+    
+
 struct MVE_VM {
 
-    MVE_Value registers[6];       // Contains the registers of the virtual machine.
-                                  // The first one is used to store the result from operations and also the returned value from functions.
-                                  // The others can be used to general purpose.
+    MVE_Registers registers;        // Contains the registers of the virtual machine.
+                                    // The first one is used to store the result from operations and also the returned value from functions.
+                                    // The others can be used to general purpose.
 
     void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t);
 

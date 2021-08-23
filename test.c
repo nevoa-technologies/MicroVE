@@ -48,11 +48,10 @@ typedef struct {
 
 void hello(MVE_VM *vm) {
 
-    int i1 = MVE_GET_STACK_INT32(vm, 4);
-    char c1 = MVE_GET_STACK_INT8(vm, 5);
-    char c2 = MVE_GET_STACK_INT8(vm, 6);
+    char c1 = MVE_GET_STACK_INT8(vm, 1);
+    char c2 = MVE_GET_STACK_INT8(vm, 2);
 
-    printf("Hello: %d %c %c.", i1, c1, c2);
+    printf("Hello: %d %d.", (int) c1, (int) c2);
 }
 
 
@@ -66,9 +65,11 @@ int main() {
                             MVE_OP_PUSH, 2, 'a', 'b',
                             MVE_OP_PUSH, 2, 'c', 'd',
                             MVE_OP_POP, 1,
-                            MVE_OP_PUSH, 2, 'e', 'f',
-                            MVE_OP_PUSH, 4, 0xff, 0xff, 00, 00,
+                            MVE_OP_PUSH, 2, 4, 5,
                             MVE_OP_CALLEX, 0, 0, 1, 2,
+                            MVE_OP_LDR, 0, 1, 0, 0, 0, 1,
+                            MVE_OP_LDR, 1, 2, 0, 0, 0, 1,
+                            MVE_OP_ADD, 0, 0, 1,
                             MVE_OP_EOP
     };
 

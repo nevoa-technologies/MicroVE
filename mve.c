@@ -254,6 +254,40 @@ void mve_op_pop(MVE_VM *vm) {
 }
 
 
+void mve_op_ldr(MVE_VM *vm) {
+
+    // The register to load the value into.
+    uint8_t reg = mve_request_uint8(vm);
+
+    uint32_t stack_end_index = mve_request_uint32(vm);
+    uint8_t length = mve_request_uint8(vm);
+
+    MVE_Value value;
+    value.i = 0;
+
+    for (uint8_t i = 0; i < length; i++)
+    {
+        #ifdef MVE_BIG_ENDIAN
+            value.b[length - i - 1] = vm->stack[vm->stack_index - stack_end_index + i];
+        #else
+            value.b[i] = vm->stack[vm->stack_index - stack_end_index + i];
+        #endif
+    }
+
+    vm->registers.all[reg] = value;
+}
+
+
+void mve_op_add(MVE_VM *vm) {
+
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i + vm->registers.all[reg_op2].i;
+}
+
+
 void mve_op_callex(MVE_VM *vm) {
 
     uint16_t function_index = mve_request_uint16(vm);
@@ -283,8 +317,14 @@ void mve_run(MVE_VM *vm) {
     case MVE_OP_POP:
         mve_op_pop(vm);
         break;
+    case MVE_OP_LDR:
+        mve_op_ldr(vm);
+        break;
     case MVE_OP_CALLEX:
         mve_op_callex(vm);
+        break;
+    case MVE_OP_ADD:
+        mve_op_add(vm);
         break;
     case MVE_OP_EOP:
         mve_stop(vm);
