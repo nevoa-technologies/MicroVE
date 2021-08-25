@@ -233,7 +233,7 @@ void mve_op_push(MVE_VM *vm) {
     // The size of the value to push.
     uint8_t size = mve_request_uint8(vm);
 
-    MVE_ASSERT(MVE_STACK_SIZE > vm->stack_index + size, vm, MVE_ERROR_STACK_OUT_OF_RANGE, "PUSH failed! Stack out of range. The index cannot be bigger than the stack.");
+    MVE_ASSERT_STACK_INDEX(vm->stack_index + size, "PUSH failed!", vm);
 
     // Write the value into the stack.
     for (uint16_t i = 0; i < size; i++)
@@ -248,10 +248,11 @@ void mve_op_pop(MVE_VM *vm) {
     // The size of the value to pop.
     uint8_t size = mve_request_uint8(vm);
 
-    MVE_ASSERT(vm->stack_index - size > 0, vm, MVE_ERROR_STACK_OUT_OF_RANGE, "POP failed! Stack out of range. The index cannot be negative.");
+    MVE_ASSERT_STACK_INDEX(vm->stack_index - size, "POP failed!", vm);
 
     vm->stack_index -= size;
 }
+
 
 
 void mve_op_ldr(MVE_VM *vm) {
@@ -259,8 +260,13 @@ void mve_op_ldr(MVE_VM *vm) {
     // The register to load the value into.
     uint8_t reg = mve_request_uint8(vm);
 
+    MVE_ASSERT_REGISTER(reg, "LDR failed!", vm);
+
     uint32_t stack_end_index = mve_request_uint32(vm);
     uint8_t length = mve_request_uint8(vm);
+
+    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index, "LDR failed!", vm);
+    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index + length, "LDR failed!", vm);
 
     MVE_Value value;
     value.i = 0;
@@ -283,8 +289,13 @@ void mve_op_str(MVE_VM *vm) {
     // The register to load the value from.
     uint8_t reg = mve_request_uint8(vm);
 
+    MVE_ASSERT_REGISTER(reg, "STR failed!", vm);
+
     uint32_t stack_end_index = mve_request_uint32(vm);
     uint8_t length = mve_request_uint8(vm);
+
+    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index, "SYT failed!", vm);
+    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index + length, "STR failed!", vm);
 
     for (uint8_t i = 0; i < length; i++)
     {
@@ -297,13 +308,86 @@ void mve_op_str(MVE_VM *vm) {
 }
 
 
+void mve_op_mov(MVE_VM *vm) {
+
+    uint8_t reg_to = mve_request_uint8(vm);
+    uint8_t reg_from = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_to, "MOV failed!", vm);
+    MVE_ASSERT_REGISTER(reg_from, "MOV failed!", vm);
+
+
+    vm->registers.all[reg_to].i = vm->registers.all[reg_from].i;
+}
+
+
+void mve_op_neg(MVE_VM *vm) {
+
+    uint8_t reg = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg, "NEG failed!", vm);
+
+    vm->registers.all[reg].i = -vm->registers.all[reg].i;
+}
+
+
 void mve_op_add(MVE_VM *vm) {
 
     uint8_t reg_result = mve_request_uint8(vm);
     uint8_t reg_op1 = mve_request_uint8(vm);
     uint8_t reg_op2 = mve_request_uint8(vm);
 
+    MVE_ASSERT_REGISTER(reg_result, "ADD failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "ADD failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "ADD failed!", vm);
+
+
     vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i + vm->registers.all[reg_op2].i;
+}
+
+
+void mve_op_sub(MVE_VM *vm) {
+
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "SUB failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "SUB failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "SUB failed!", vm);
+
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i - vm->registers.all[reg_op2].i;
+}
+
+
+void mve_op_mul(MVE_VM *vm) {
+
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "MUL failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "MUL failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "MUL failed!", vm);
+
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i * vm->registers.all[reg_op2].i;
+}
+
+
+void mve_op_div(MVE_VM *vm) {
+
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "DIV failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "DIV failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "DIV failed!", vm);
+
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i / vm->registers.all[reg_op2].i;
 }
 
 
@@ -342,11 +426,26 @@ void mve_run(MVE_VM *vm) {
     case MVE_OP_STR:
         mve_op_str(vm);
         break;
+    case MVE_OP_MOV:
+        mve_op_mov(vm);
+        break;
+    case MVE_OP_NEG:
+        mve_op_neg(vm);
+        break;
     case MVE_OP_CALLEX:
         mve_op_callex(vm);
         break;
     case MVE_OP_ADD:
         mve_op_add(vm);
+        break;
+    case MVE_OP_SUB:
+        mve_op_sub(vm);
+        break;
+    case MVE_OP_MUL:
+        mve_op_mul(vm);
+        break;
+    case MVE_OP_DIV:
+        mve_op_div(vm);
         break;
     case MVE_OP_EOP:
         mve_stop(vm);

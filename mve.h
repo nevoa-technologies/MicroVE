@@ -48,6 +48,7 @@
 
 #define MVE_ERROR_STACK_OUT_OF_RANGE                    1       // Happens when trying to access an index bigger than the size of the stack.
 #define MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE        2       // Happens when calling an external functions, which index is invalid.
+#define MVE_ERROR_REGISTER_OUT_OF_RANGE                 3       // Happens when accessing an invalid register, that is smaller than 0 or bigger than MVE_REGISTERS_LIMIT.
 #define MVE_ERROR_UNDEFINED_OP                          57      // Happens when the OP of the next instruction is not recognized.
 
 
@@ -57,14 +58,14 @@
 #define MVE_OP_POP                      (uint8_t) 2             // Pop a value from the stack.
 #define MVE_OP_LDR                      (uint8_t) 3             // Load bytes from the stack into a register.
 #define MVE_OP_STR                      (uint8_t) 4             // Set bytes of the stack from a register.
-#define MVE_OP_MOV                      (uint8_t) 5
-#define MVE_OP_NEG                      (uint8_t) 6
+#define MVE_OP_MOV                      (uint8_t) 5             // Copies the value from a register into another.
+#define MVE_OP_NEG                      (uint8_t) 6             // Negates a register.
 #define MVE_OP_BX                       (uint8_t) 7
 #define MVE_OP_CALLEX                   (uint8_t) 8             // Call a linked external function.
 #define MVE_OP_ADD                      (uint8_t) 9             // Adds 2 registers.
-#define MVE_OP_SUB                      (uint8_t) 10
-#define MVE_OP_MUL                      (uint8_t) 11
-#define MVE_OP_DIV                      (uint8_t) 12
+#define MVE_OP_SUB                      (uint8_t) 10            // Subtracts 2 registers.
+#define MVE_OP_MUL                      (uint8_t) 11            // Multiplies 2 registers.
+#define MVE_OP_DIV                      (uint8_t) 12            // Divides 2 registers.
 #define MVE_OP_CMP                      (uint8_t) 13
 #define MVE_OP_AND                      (uint8_t) 14
 #define MVE_OP_ORR                      (uint8_t) 15
@@ -81,6 +82,13 @@
 
 #define MVE_OP_ALLOC                    (uint8_t) 128
 #define MVE_OP_FREE                     (uint8_t) 129
+
+
+#define MVE_REGISTERS_LIMIT 6
+
+
+#define MVE_ASSERT_REGISTER(reg, msg, vm) MVE_ASSERT(reg >= 0 && reg < MVE_REGISTERS_LIMIT, vm, MVE_ERROR_REGISTER_OUT_OF_RANGE, msg " Invalid register. The register cannot be negative or bigger than MVE_REGISTERS_LIMIT.");
+#define MVE_ASSERT_STACK_INDEX(index, msg, vm) MVE_ASSERT(index >= 0 && index < MVE_STACK_SIZE, vm, MVE_ERROR_STACK_OUT_OF_RANGE, msg " Stack index out of range. The index cannot be negative or bigger than MVE_STACK_SIZE.");
 
 
 #ifdef MVE_BIG_ENDIAN

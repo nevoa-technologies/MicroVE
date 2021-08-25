@@ -63,6 +63,7 @@ int main() {
                             'h', 'e', 'l', 'l', 'o', 0x00, // Function 1
                             'f', 'u', 'n', 'c', '2', 0x00,  // Function 2,
                             MVE_OP_PUSH, 2, 'a', 'b',
+                            MVE_OP_POP, 2,
                             MVE_OP_PUSH, 2, 'c', 'd',
                             MVE_OP_POP, 1,
                             MVE_OP_PUSH, 2, 4, 5,
@@ -70,6 +71,8 @@ int main() {
                             MVE_OP_LDR, 0, 1, 0, 0, 0, 1,
                             MVE_OP_LDR, 1, 2, 0, 0, 0, 1,
                             MVE_OP_ADD, 0, 0, 1,
+                            MVE_OP_MOV, 1, 0,
+                            MVE_OP_NEG, 0,
                             MVE_OP_STR, 0, 1, 0, 0, 0, 1,
                             MVE_OP_EOP
     };
