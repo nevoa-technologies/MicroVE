@@ -7,7 +7,7 @@
 
 
 #define MVE_VERSION_MAJOR ((uint16_t)1) // Bytecode major version. The program must have the same version.
-#define MVE_VERSION_MINOR ((uint16_t)5) // Bytecode minor version. The program must have a lower or same version.
+#define MVE_VERSION_MINOR ((uint16_t)0) // Bytecode minor version. The program must have a lower or same version.
 
 
 #ifndef MVE_EXTERNAL_FUNCTIONS_LIMIT
@@ -30,12 +30,16 @@
 #error MVE_BUFFER_SIZE must be greater than 32.
 #endif
 
-#ifndef MVE_BRANCH_LIMIT
-#define MVE_BRANCH_LIMIT 8
+#ifndef MVE_SCOPE_LIMIT
+#define MVE_SCOPE_LIMIT 8
 #endif
 
-#if MVE_BRANCH_LIMIT < 4
-#error MVE_BRANCH_LIMIT must be greater than 4.
+#if MVE_SCOPE_LIMIT < 4
+#error MVE_SCOPE_LIMIT must be greater than 4.
+#endif
+
+#ifdef MVE_LOCAL_PROGRAM
+#define MVE_BUFFER_SIZE UINT32_MAX
 #endif
 
 #ifdef MVE_ERROR_LOG
@@ -46,9 +50,11 @@
 #endif
 
 
+#define MVE_ERROR_INCOMPATIBLE_VERSION                  0       // Happens when the program is not not compatible.
 #define MVE_ERROR_STACK_OUT_OF_RANGE                    1       // Happens when trying to access an index bigger than the size of the stack.
 #define MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE        2       // Happens when calling an external functions, which index is invalid.
 #define MVE_ERROR_REGISTER_OUT_OF_RANGE                 3       // Happens when accessing an invalid register, that is smaller than 0 or bigger than MVE_REGISTERS_LIMIT.
+#define MVE_ERROR_SCOPE_OUT_OF_RANGE                    4       // Happens when creating or deleting a scope that is out of range.
 #define MVE_ERROR_UNDEFINED_OP                          57      // Happens when the OP of the next instruction is not recognized.
 
 
@@ -66,13 +72,14 @@
 #define MVE_OP_SUB                      (uint8_t) 10            // Subtracts 2 registers.
 #define MVE_OP_MUL                      (uint8_t) 11            // Multiplies 2 registers.
 #define MVE_OP_DIV                      (uint8_t) 12            // Divides 2 registers.
-#define MVE_OP_BGN                      (uint8_t) 13
-#define MVE_OP_END                      (uint8_t) 14
-#define MVE_OP_CMP                      (uint8_t) 14
-#define MVE_OP_AND                      (uint8_t) 15
-#define MVE_OP_ORR                      (uint8_t) 16
-#define MVE_OP_JMP                      (uint8_t) 17
-#define MVE_OP_CALL                     (uint8_t) 18
+#define MVE_OP_BGN                      (uint8_t) 13            // Creates a new scope.
+#define MVE_OP_END                      (uint8_t) 14            // Finishes the previous scope.
+#define MVE_OP_CMP                      (uint8_t) 15
+#define MVE_OP_AND                      (uint8_t) 16
+#define MVE_OP_ORR                      (uint8_t) 17
+#define MVE_OP_JMP                      (uint8_t) 18
+#define MVE_OP_CALL                     (uint8_t) 19            // Jumps to a location. Creating and ending a scope will make it return to where it was called.
+
 
 #define MVE_OP_ITOF                     (uint8_t) 64
 #define MVE_OP_FTOI                     (uint8_t) 65
@@ -87,12 +94,12 @@
 #define MVE_OP_FREE                     (uint8_t) 129
 
 
-#define MVE_R0                 (uint8_t) 0
-#define MVE_R1                 (uint8_t) 1
-#define MVE_R2                 (uint8_t) 2
-#define MVE_R3                 (uint8_t) 3
-#define MVE_R4                 (uint8_t) 4
-#define MVE_RR                 (uint8_t) 5
+#define MVE_R0                          (uint8_t) 0
+#define MVE_R1                          (uint8_t) 1
+#define MVE_R2                          (uint8_t) 2
+#define MVE_R3                          (uint8_t) 3
+#define MVE_R4                          (uint8_t) 4
+#define MVE_RR                          (uint8_t) 5
 
 
 #define MVE_REGISTERS_LIMIT 6
@@ -160,13 +167,14 @@ typedef union  {
 #endif
 
 
-struct MVE_VM;
-typedef struct MVE_VM MVE_VM;
-
 typedef struct {
     uint32_t program_index;
     uint32_t stack_base;
-} MVE_Branch_Info;
+} MVE_Scope_Info;
+
+
+struct MVE_VM;
+typedef struct MVE_VM MVE_VM;
 
 
 typedef union
@@ -197,8 +205,8 @@ struct MVE_VM {
 
     uint32_t buffer_index;                      // The current position in the program buffer.
 
-    uint32_t branch_index;                                  // The current branch index.
-    MVE_Branch_Info branches[MVE_BRANCH_LIMIT];       // Used to know where it was when calling contexts.
+    uint32_t scope_index;                                  // The current scope index.
+    MVE_Scope_Info scopes[MVE_SCOPE_LIMIT];       // Used to know where it was when calling contexts.
 
 #ifdef MVE_LOCAL_PROGRAM
     uint8_t *program_buffer;    // Buffer to store the next instructions of the program to be processed.

@@ -5,7 +5,8 @@
 #define false   0
 
 
-static inline bool string_equals(const char *str1, const char *str2) {
+static inline bool string_equals(const char *str1, const char *str2) 
+{
     uint16_t i = 0;
 
     while (str1[i] != 0 && str1[i] == str2[i])
@@ -28,8 +29,8 @@ static inline bool string_equals(const char *str1, const char *str2) {
  * 
  * @param vm VM to load the bytes into.
  */
-static void mve_load_next_block(MVE_VM *vm) {
-
+static void mve_load_next_block(MVE_VM *vm) 
+{
 #ifdef MVE_LOCAL_PROGRAM
 #else
     // TODO: This may cause infinite looping. Add verifications in the future.
@@ -49,7 +50,8 @@ static void mve_load_next_block(MVE_VM *vm) {
     uint8_t *buffer = vm->program_buffer + index;
     uint32_t length = vm->buffer_index;
 
-    if (vm->buffer_index == 0) {
+    if (vm->buffer_index == 0) 
+    {
         length = MVE_BUFFER_SIZE;
         buffer = vm->program_buffer;
     }
@@ -65,6 +67,30 @@ static void mve_load_next_block(MVE_VM *vm) {
 
 
 /**
+ * @brief Jumps a given location in the program.
+ * If it's not loaded, it will load that location first.
+ * 
+ * @param vm The VM executing the program.
+ * @param index Index in the program to go.
+ */
+static void mve_jump_to_program_index(MVE_VM *vm, uint32_t index) 
+{
+    #ifdef MVE_LOCAL_PROGRAM
+        vm->buffer_index = index;
+    #else
+        if (vm->program_index - MVE_BUFFER_SIZE <= index && index <= vm->program_index) 
+        {
+            vm->buffer_index = index - vm->program_index;
+            return;
+        }
+
+        vm->program_index = index;
+        mve_load_next_block(vm);
+    #endif
+}
+
+
+/**
  * @brief Ensures that the buffer have the program within a specific index and length.
  * This is used to read a specific amount of bytes,
  * without having to check the size of the buffer.
@@ -74,7 +100,8 @@ static void mve_load_next_block(MVE_VM *vm) {
  * @param index Index at the buffer.
  * @param size Size to ensure the buffer has after the index.
  */
-inline static void mve_ensure_buffer_size_at(MVE_VM *vm, uint16_t index, uint8_t length) {
+inline static void mve_ensure_buffer_size_at(MVE_VM *vm, uint16_t index, uint8_t length) 
+{
     if (index + length > MVE_BUFFER_SIZE)
         mve_load_next_block(vm);
 }
@@ -89,7 +116,8 @@ inline static void mve_ensure_buffer_size_at(MVE_VM *vm, uint16_t index, uint8_t
  * @param vm VM to ensure the buffer size.
  * @param size Size to ensure the buffer has after the buffer index.
  */
-inline static void mve_ensure_buffer_size(MVE_VM *vm, uint8_t length) {
+inline static void mve_ensure_buffer_size(MVE_VM *vm, uint8_t length) 
+{
     mve_ensure_buffer_size_at(vm, vm->buffer_index, length);
 }
 
@@ -100,8 +128,12 @@ inline static void mve_ensure_buffer_size(MVE_VM *vm, uint8_t length) {
  * @param vm VM to read the next byte.
  * @return Returns the value readed.
  */
-static uint32_t mve_request_uint32(MVE_VM *vm) {
-    mve_ensure_buffer_size(vm, 4);
+static uint32_t mve_request_uint32(MVE_VM *vm) 
+{
+    #ifndef MVE_LOCAL_PROGRAM
+        mve_ensure_buffer_size(vm, 4);
+    #endif
+
     uint32_t value = MVE_BYTES_TO_UINT32(vm->program_buffer, vm->buffer_index);
     vm->buffer_index += 4;
 
@@ -115,8 +147,12 @@ static uint32_t mve_request_uint32(MVE_VM *vm) {
  * @param vm VM to read the next byte.
  * @return Returns the value readed.
  */
-static uint32_t mve_request_uint16(MVE_VM *vm) {
-    mve_ensure_buffer_size(vm, 2);
+static uint32_t mve_request_uint16(MVE_VM *vm) 
+{
+    #ifndef MVE_LOCAL_PROGRAM
+        mve_ensure_buffer_size(vm, 2);
+    #endif
+
     uint32_t value = MVE_BYTES_TO_UINT16(vm->program_buffer, vm->buffer_index);
     vm->buffer_index += 2;
 
@@ -130,8 +166,12 @@ static uint32_t mve_request_uint16(MVE_VM *vm) {
  * @param vm VM to read the next byte.
  * @return Returns the byte readed.
  */
-static uint8_t mve_request_uint8(MVE_VM *vm) {
-    mve_ensure_buffer_size(vm, 1);
+static uint8_t mve_request_uint8(MVE_VM *vm) 
+{
+    #ifndef MVE_LOCAL_PROGRAM
+        mve_ensure_buffer_size(vm, 1);
+    #endif
+
     uint8_t byte = vm->program_buffer[vm->buffer_index];
     vm->buffer_index++;
 
@@ -145,8 +185,8 @@ static uint8_t mve_request_uint8(MVE_VM *vm) {
  * 
  * @param vm VM to load the header.
  */
-static bool mve_load_header(MVE_VM *vm) {
-
+static bool mve_load_header(MVE_VM *vm) 
+{
     uint16_t major_version = MVE_BYTES_TO_UINT16(vm->program_buffer, 0);
     uint16_t minor_version = MVE_BYTES_TO_UINT16(vm->program_buffer, 2);
 
@@ -175,61 +215,8 @@ static bool mve_load_header(MVE_VM *vm) {
 }
 
 
-#ifdef MVE_LOCAL_PROGRAM
-bool mve_init(MVE_VM *vm, uint8_t *program) {
-    vm->program_buffer = program;
-#else
-bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t)) {
-    vm->fun_load_next_block = fun_load_next_block;
-#endif
-    vm->program_index = 0;
-    vm->is_running = false;
-    vm->buffer_index = 0;
-    vm->stack_index = 0;
-    vm->branch_index = 0;
-
-    for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
-        vm->external_functions[i] = NULL;
-    }
-
-    mve_load_next_block(vm);
-
-    return mve_load_header(vm);
-}
-
-
-void mve_link_function(MVE_VM *vm, const char *name, void (*function) (MVE_VM *)) {
-    uint32_t heap_index = 0;
-    uint16_t function_index = 0;
-
-    for (uint16_t i = 0; i < vm->external_functions_count; i++) {
-
-        uint32_t start = heap_index;
-
-        while (vm->heap[heap_index] != '\0') {
-            heap_index++;
-        } 
-
-        heap_index++;
-
-        if (string_equals((const char *) vm->heap + start, name))
-        {
-            vm->external_functions[function_index] = function;
-            return;
-        }
-
-        function_index++;
-    }
-}
-
-
-void mve_start(MVE_VM *vm) {
-    vm->is_running = true;
-}
-
-
-void mve_op_push(MVE_VM *vm) {
-
+static void mve_op_push(MVE_VM *vm) 
+{
     // The size of the value to push.
     uint8_t size = mve_request_uint8(vm);
 
@@ -243,8 +230,8 @@ void mve_op_push(MVE_VM *vm) {
 }
 
 
-void mve_op_pop(MVE_VM *vm) {
-
+static void mve_op_pop(MVE_VM *vm) 
+{
     // The size of the value to pop.
     uint8_t size = mve_request_uint8(vm);
 
@@ -255,8 +242,8 @@ void mve_op_pop(MVE_VM *vm) {
 
 
 
-void mve_op_ldr(MVE_VM *vm) {
-
+static void mve_op_ldr(MVE_VM *vm) 
+{
     // The register to load the value into.
     uint8_t reg = mve_request_uint8(vm);
 
@@ -284,8 +271,8 @@ void mve_op_ldr(MVE_VM *vm) {
 }
 
 
-void mve_op_str(MVE_VM *vm) {
-
+static void mve_op_str(MVE_VM *vm) 
+{
     // The register to load the value from.
     uint8_t reg = mve_request_uint8(vm);
 
@@ -294,7 +281,7 @@ void mve_op_str(MVE_VM *vm) {
     uint32_t stack_end_index = mve_request_uint32(vm);
     uint8_t length = mve_request_uint8(vm);
 
-    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index, "SYT failed!", vm);
+    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index, "STR failed!", vm);
     MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index + length, "STR failed!", vm);
 
     for (uint8_t i = 0; i < length; i++)
@@ -308,8 +295,8 @@ void mve_op_str(MVE_VM *vm) {
 }
 
 
-void mve_op_ldi(MVE_VM *vm) {
-
+static void mve_op_ldi(MVE_VM *vm) 
+{
     uint8_t reg = mve_request_uint8(vm);
 
     MVE_ASSERT_REGISTER(reg, "LDI failed!", vm);
@@ -331,8 +318,8 @@ void mve_op_ldi(MVE_VM *vm) {
 }
 
 
-void mve_op_mov(MVE_VM *vm) {
-
+static void mve_op_mov(MVE_VM *vm) 
+{
     uint8_t reg_to = mve_request_uint8(vm);
     uint8_t reg_from = mve_request_uint8(vm);
 
@@ -344,8 +331,8 @@ void mve_op_mov(MVE_VM *vm) {
 }
 
 
-void mve_op_neg(MVE_VM *vm) {
-
+static void mve_op_neg(MVE_VM *vm) 
+{
     uint8_t reg = mve_request_uint8(vm);
 
     MVE_ASSERT_REGISTER(reg, "NEG failed!", vm);
@@ -354,8 +341,8 @@ void mve_op_neg(MVE_VM *vm) {
 }
 
 
-void mve_op_add(MVE_VM *vm) {
-
+static void mve_op_add(MVE_VM *vm) 
+{
     uint8_t reg_result = mve_request_uint8(vm);
     uint8_t reg_op1 = mve_request_uint8(vm);
     uint8_t reg_op2 = mve_request_uint8(vm);
@@ -369,8 +356,8 @@ void mve_op_add(MVE_VM *vm) {
 }
 
 
-void mve_op_sub(MVE_VM *vm) {
-
+static void mve_op_sub(MVE_VM *vm) 
+{
     uint8_t reg_result = mve_request_uint8(vm);
     uint8_t reg_op1 = mve_request_uint8(vm);
     uint8_t reg_op2 = mve_request_uint8(vm);
@@ -384,8 +371,8 @@ void mve_op_sub(MVE_VM *vm) {
 }
 
 
-void mve_op_mul(MVE_VM *vm) {
-
+static void mve_op_mul(MVE_VM *vm) 
+{
     uint8_t reg_result = mve_request_uint8(vm);
     uint8_t reg_op1 = mve_request_uint8(vm);
     uint8_t reg_op2 = mve_request_uint8(vm);
@@ -399,8 +386,8 @@ void mve_op_mul(MVE_VM *vm) {
 }
 
 
-void mve_op_div(MVE_VM *vm) {
-
+static void mve_op_div(MVE_VM *vm) 
+{
     uint8_t reg_result = mve_request_uint8(vm);
     uint8_t reg_op1 = mve_request_uint8(vm);
     uint8_t reg_op2 = mve_request_uint8(vm);
@@ -414,25 +401,128 @@ void mve_op_div(MVE_VM *vm) {
 }
 
 
-void mve_op_invoke(MVE_VM *vm) {
-
+static void mve_op_invoke(MVE_VM *vm) 
+{
     uint16_t function_index = mve_request_uint16(vm);
 
     MVE_ASSERT(vm->external_functions_count > function_index, vm, MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE, "INVOKE failed! Invalid function index.");
-
-    uint8_t params_count = mve_request_uint8(vm);
-    int total_length = 0;
-
-    for (int i = 0; i < params_count; i++)
-        total_length += mve_request_uint8(vm);
 
     void (*func) () = vm->external_functions[0];
     func(vm);
 }
 
 
-void mve_run(MVE_VM *vm) {
+static void mve_op_bgn(MVE_VM *vm) 
+{
+    MVE_ASSERT(vm->scope_index + 1 < MVE_SCOPE_LIMIT, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "BGN failed! There cannot be no more scopes than MVE_SCOPE_LIMIT.");
 
+    vm->scope_index++;
+    vm->scopes[vm->scope_index].stack_base = vm->stack_index;
+}
+
+
+static void mve_op_end(MVE_VM *vm) 
+{
+    MVE_ASSERT(vm->scope_index - 1 >= 0, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "END failed! There is no scope to end.");
+
+    vm->stack_index = vm->scopes[vm->scope_index].stack_base;
+
+    uint32_t program_index = vm->scopes[vm->scope_index].program_index;
+
+    if (program_index != 0) 
+    {
+        mve_jump_to_program_index(vm, program_index);
+    }
+
+    vm->scopes[vm->scope_index].program_index = 0;
+    vm->scope_index--;
+}
+
+
+static void mve_op_call(MVE_VM *vm) {
+
+    uint32_t index = mve_request_uint32(vm);
+
+    if (vm->scope_index + 1 >= MVE_SCOPE_LIMIT)
+        return;
+    
+    #ifdef MVE_LOCAL_PROGRAM
+        vm->scopes[vm->scope_index + 1].program_index = vm->buffer_index;
+    #else
+        vm->scopes[vm->scope_index + 1].program_index = vm->program_index - MVE_BUFFER_SIZE + vm->buffer_index;
+    #endif
+    
+    mve_jump_to_program_index(vm, index);
+    
+}
+
+
+#ifdef MVE_LOCAL_PROGRAM
+bool mve_init(MVE_VM *vm, uint8_t *program) 
+{
+    vm->program_buffer = program;
+#else
+bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t)) {
+    vm->fun_load_next_block = fun_load_next_block;
+#endif
+    vm->program_index = 0;
+    vm->is_running = false;
+    vm->buffer_index = 0;
+    vm->stack_index = 0;
+    vm->scope_index = 0;
+
+    for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
+        vm->external_functions[i] = NULL;
+    }
+
+    mve_load_next_block(vm);
+
+    bool result = mve_load_header(vm);
+
+    if (!result)
+        MVE_ASSERT(result, vm, MVE_ERROR_INCOMPATIBLE_VERSION, "Incompatible program. Please upgrade your MicroVE into a newer version or compile your program to an old one.");
+
+    return result;
+}
+
+
+void mve_link_function(MVE_VM *vm, const char *name, void (*function) (MVE_VM *)) 
+{
+    uint32_t heap_index = 0;
+    uint16_t function_index = 0;
+
+    for (uint16_t i = 0; i < vm->external_functions_count; i++) {
+
+        uint32_t start = heap_index;
+
+        while (vm->heap[heap_index] != '\0') {
+            heap_index++;
+        } 
+
+        heap_index++;
+
+        if (string_equals((const char *) vm->heap + start, name))
+        {
+            vm->external_functions[function_index] = function;
+            return;
+        }
+
+        function_index++;
+    }
+}
+
+
+void mve_start(MVE_VM *vm) 
+{
+    vm->is_running = true;
+
+    for (uint32_t i = 0; i < MVE_SCOPE_LIMIT; i++)
+        vm->scopes[i].program_index = 0;
+}
+
+
+void mve_run(MVE_VM *vm) 
+{
     uint8_t next_operation = mve_request_uint8(vm);
 
     switch (next_operation)
@@ -473,22 +563,33 @@ void mve_run(MVE_VM *vm) {
     case MVE_OP_DIV:
         mve_op_div(vm);
         break;
+    case MVE_OP_BGN:
+        mve_op_bgn(vm);
+        break;
+    case MVE_OP_END:
+        mve_op_end(vm);
+        break;
+    case MVE_OP_CALL:
+        mve_op_call(vm);
+        break;
     case MVE_OP_EOP:
         mve_stop(vm);
         break;
     default:
-        MVE_ASSERT(false, vm, MVE_ERROR_UNDEFINED_OP, "Undefined Instruction! Code does not exist.");
+        MVE_ASSERT(false, vm, MVE_ERROR_UNDEFINED_OP, "Undefined instruction! Code does not exist.");
         mve_stop(vm);
         break;
     }
 }
 
 
-bool mve_is_running(MVE_VM *vm) {
+bool mve_is_running(MVE_VM *vm) 
+{
     return vm->is_running;
 }
 
 
-void mve_stop(MVE_VM *vm) {
+void mve_stop(MVE_VM *vm) 
+{
     vm->is_running = false;
 }

@@ -7,7 +7,7 @@
 #define MVE_STACK_SIZE 128
 #define MVE_HEAP_SIZE 128
 
-#define MVE_BRANCH_LIMIT 8
+#define MVE_SCOPE_LIMIT 8
 
 #define MVE_LOCAL_PROGRAM
 
@@ -58,7 +58,7 @@ void hello(MVE_VM *vm) {
 int main() {
     
     uint8_t program[] = {   0x01, 0x00, // Verion Major
-                            0x03, 0x00, // Version Minor
+                            0x00, 0x00, // Version Minor
                             0x02, 0x00, 0x00, 0x00, // External functions count
                             'h', 'e', 'l', 'l', 'o', 0x00, // Function 1
                             'f', 'u', 'n', 'c', '2', 0x00,  // Function 2,
@@ -67,14 +67,18 @@ int main() {
                             MVE_OP_PUSH, 2, 'c', 'd',
                             MVE_OP_POP, 1,
                             MVE_OP_PUSH, 2, 4, 5,
-                            MVE_OP_INVOKE, 0, 0, 1, 2,
+                            MVE_OP_INVOKE, 0, 0,
                             MVE_OP_LDR, MVE_R0, 1, 0, 0, 0, 1,
                             MVE_OP_LDR, MVE_R1, 2, 0, 0, 0, 1,
                             MVE_OP_ADD, MVE_R0, MVE_R0, MVE_R1,
                             MVE_OP_MOV, MVE_R1, MVE_R0,
                             MVE_OP_NEG, MVE_R0,
                             MVE_OP_STR, MVE_R0, 1, 0, 0, 0, 1,
-                            MVE_OP_LDI, MVE_R4, 1, 6,
+                            MVE_OP_LDI, MVE_R0, 1, 0,
+                            MVE_OP_CALL, 78, 0, 0, 0,
+                            MVE_OP_BGN,
+                            MVE_OP_ADD, MVE_R0, MVE_R0, MVE_R1,
+                            MVE_OP_END,
                             MVE_OP_EOP
     };
 
