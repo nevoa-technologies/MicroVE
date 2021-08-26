@@ -67,13 +67,14 @@ int main() {
                             MVE_OP_PUSH, 2, 'c', 'd',
                             MVE_OP_POP, 1,
                             MVE_OP_PUSH, 2, 4, 5,
-                            MVE_OP_CALLEX, 0, 0, 1, 2,
-                            MVE_OP_LDR, 0, 1, 0, 0, 0, 1,
-                            MVE_OP_LDR, 1, 2, 0, 0, 0, 1,
-                            MVE_OP_ADD, 0, 0, 1,
-                            MVE_OP_MOV, 1, 0,
-                            MVE_OP_NEG, 0,
-                            MVE_OP_STR, 0, 1, 0, 0, 0, 1,
+                            MVE_OP_INVOKE, 0, 0, 1, 2,
+                            MVE_OP_LDR, MVE_R0, 1, 0, 0, 0, 1,
+                            MVE_OP_LDR, MVE_R1, 2, 0, 0, 0, 1,
+                            MVE_OP_ADD, MVE_R0, MVE_R0, MVE_R1,
+                            MVE_OP_MOV, MVE_R1, MVE_R0,
+                            MVE_OP_NEG, MVE_R0,
+                            MVE_OP_STR, MVE_R0, 1, 0, 0, 0, 1,
+                            MVE_OP_LDI, MVE_R4, 1, 6,
                             MVE_OP_EOP
     };
 

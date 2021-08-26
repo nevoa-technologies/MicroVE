@@ -100,7 +100,7 @@ inline static void mve_ensure_buffer_size(MVE_VM *vm, uint8_t length) {
  * @param vm VM to read the next byte.
  * @return Returns the value readed.
  */
-inline static uint32_t mve_request_uint32(MVE_VM *vm) {
+static uint32_t mve_request_uint32(MVE_VM *vm) {
     mve_ensure_buffer_size(vm, 4);
     uint32_t value = MVE_BYTES_TO_UINT32(vm->program_buffer, vm->buffer_index);
     vm->buffer_index += 4;
@@ -115,7 +115,7 @@ inline static uint32_t mve_request_uint32(MVE_VM *vm) {
  * @param vm VM to read the next byte.
  * @return Returns the value readed.
  */
-inline static uint32_t mve_request_uint16(MVE_VM *vm) {
+static uint32_t mve_request_uint16(MVE_VM *vm) {
     mve_ensure_buffer_size(vm, 2);
     uint32_t value = MVE_BYTES_TO_UINT16(vm->program_buffer, vm->buffer_index);
     vm->buffer_index += 2;
@@ -130,7 +130,7 @@ inline static uint32_t mve_request_uint16(MVE_VM *vm) {
  * @param vm VM to read the next byte.
  * @return Returns the byte readed.
  */
-inline static uint8_t mve_request_uint8(MVE_VM *vm) {
+static uint8_t mve_request_uint8(MVE_VM *vm) {
     mve_ensure_buffer_size(vm, 1);
     uint8_t byte = vm->program_buffer[vm->buffer_index];
     vm->buffer_index++;
@@ -308,6 +308,29 @@ void mve_op_str(MVE_VM *vm) {
 }
 
 
+void mve_op_ldi(MVE_VM *vm) {
+
+    uint8_t reg = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg, "LDI failed!", vm);
+    
+    uint8_t length = mve_request_uint8(vm);
+
+    MVE_Value value;
+
+    for (uint8_t i = 0; i < length; i++)
+    {
+        #ifdef MVE_BIG_ENDIAN
+            value.b[i] = mve_request_uint8(vm);
+        #else
+            value.b[i] = mve_request_uint8(vm);
+        #endif
+    }
+
+    vm->registers.all[reg].i = value.i;
+}
+
+
 void mve_op_mov(MVE_VM *vm) {
 
     uint8_t reg_to = mve_request_uint8(vm);
@@ -391,11 +414,11 @@ void mve_op_div(MVE_VM *vm) {
 }
 
 
-void mve_op_callex(MVE_VM *vm) {
+void mve_op_invoke(MVE_VM *vm) {
 
     uint16_t function_index = mve_request_uint16(vm);
 
-    MVE_ASSERT(vm->external_functions_count > function_index, vm, MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE, "CALLEX failed! Invalid function index.");
+    MVE_ASSERT(vm->external_functions_count > function_index, vm, MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE, "INVOKE failed! Invalid function index.");
 
     uint8_t params_count = mve_request_uint8(vm);
     int total_length = 0;
@@ -426,14 +449,17 @@ void mve_run(MVE_VM *vm) {
     case MVE_OP_STR:
         mve_op_str(vm);
         break;
+    case MVE_OP_LDI:
+        mve_op_ldi(vm);
+        break;
     case MVE_OP_MOV:
         mve_op_mov(vm);
         break;
     case MVE_OP_NEG:
         mve_op_neg(vm);
         break;
-    case MVE_OP_CALLEX:
-        mve_op_callex(vm);
+    case MVE_OP_INVOKE:
+        mve_op_invoke(vm);
         break;
     case MVE_OP_ADD:
         mve_op_add(vm);
