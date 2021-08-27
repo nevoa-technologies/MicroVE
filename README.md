@@ -27,9 +27,9 @@ At the moment, MicroVE is not usable. The version 1.0 will be released as soon a
     - [x] Load values from the stack into registers and from registers into the stack
     - [x] Call external linked functions
     - [x] Basic arithmetic operations (sum, subtraction, multiplication and division)
-    - [ ] Scopes
+    - [x] Scopes
     - [ ] Comparsions and logical operators
-    - [ ] Jumps and scope branching
+    - [x] Jumps and scope branching
     - [ ] Floating point values
     - [ ] Heap management (allocate memory in the VM's heap to store data such as strings)
 
