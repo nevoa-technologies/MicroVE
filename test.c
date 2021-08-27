@@ -76,9 +76,14 @@ int main() {
                             MVE_OP_STR, MVE_R0, 1, 0, 0, 0, 1,
                             MVE_OP_LDI, MVE_R0, 1, 0,
                             MVE_OP_CALL, 78, 0, 0, 0,
-                            MVE_OP_BGN,
+                            MVE_OP_SCOPE,
                             MVE_OP_ADD, MVE_R0, MVE_R0, MVE_R1,
                             MVE_OP_END,
+                            MVE_OP_LDI, MVE_R0, 1, 4,
+                            MVE_OP_LDI, MVE_R1, 1, 5,
+                            MVE_OP_CMP, MVE_CMP_GREATER, MVE_R2, MVE_R0, MVE_R1,
+                            MVE_OP_JMP, MVE_R2, 106, 0, 0, 0,
+                            MVE_OP_INVOKE, 0, 0,
                             MVE_OP_EOP
     };
 

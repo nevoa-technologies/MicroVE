@@ -80,10 +80,11 @@ static void mve_jump_to_program_index(MVE_VM *vm, uint32_t index)
     #else
         if (vm->program_index - MVE_BUFFER_SIZE <= index && index <= vm->program_index) 
         {
-            vm->buffer_index = index - vm->program_index;
+            vm->buffer_index = index - (vm->program_index - MVE_BUFFER_SIZE);
             return;
         }
 
+        vm->buffer_index = 0;
         vm->program_index = index;
         mve_load_next_block(vm);
     #endif
@@ -244,11 +245,12 @@ static void mve_op_pop(MVE_VM *vm)
 
 static void mve_op_ldr(MVE_VM *vm) 
 {
-    // The register to load the value into.
+    // The register to receive the value.
     uint8_t reg = mve_request_uint8(vm);
 
     MVE_ASSERT_REGISTER(reg, "LDR failed!", vm);
 
+    // Index of the stack and length of the bytes.
     uint32_t stack_end_index = mve_request_uint32(vm);
     uint8_t length = mve_request_uint8(vm);
 
@@ -258,6 +260,7 @@ static void mve_op_ldr(MVE_VM *vm)
     MVE_Value value;
     value.i = 0;
 
+    // Copy the bytes from the stack into the value.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
@@ -278,12 +281,14 @@ static void mve_op_str(MVE_VM *vm)
 
     MVE_ASSERT_REGISTER(reg, "STR failed!", vm);
 
+    // Index of the stack and length of the bytes.
     uint32_t stack_end_index = mve_request_uint32(vm);
     uint8_t length = mve_request_uint8(vm);
 
     MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index, "STR failed!", vm);
     MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index + length, "STR failed!", vm);
 
+    // Copy the bytes from the register into the stack.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
@@ -297,14 +302,17 @@ static void mve_op_str(MVE_VM *vm)
 
 static void mve_op_ldi(MVE_VM *vm) 
 {
+    // The register to receive the value.
     uint8_t reg = mve_request_uint8(vm);
 
     MVE_ASSERT_REGISTER(reg, "LDI failed!", vm);
     
+    // The amount of bytes to write.
     uint8_t length = mve_request_uint8(vm);
 
     MVE_Value value;
 
+    // Get the bytes to write into the register.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
@@ -325,7 +333,6 @@ static void mve_op_mov(MVE_VM *vm)
 
     MVE_ASSERT_REGISTER(reg_to, "MOV failed!", vm);
     MVE_ASSERT_REGISTER(reg_from, "MOV failed!", vm);
-
 
     vm->registers.all[reg_to].i = vm->registers.all[reg_from].i;
 }
@@ -351,7 +358,6 @@ static void mve_op_add(MVE_VM *vm)
     MVE_ASSERT_REGISTER(reg_op1, "ADD failed!", vm);
     MVE_ASSERT_REGISTER(reg_op2, "ADD failed!", vm);
 
-
     vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i + vm->registers.all[reg_op2].i;
 }
 
@@ -365,7 +371,6 @@ static void mve_op_sub(MVE_VM *vm)
     MVE_ASSERT_REGISTER(reg_result, "SUB failed!", vm);
     MVE_ASSERT_REGISTER(reg_op1, "SUB failed!", vm);
     MVE_ASSERT_REGISTER(reg_op2, "SUB failed!", vm);
-
 
     vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i - vm->registers.all[reg_op2].i;
 }
@@ -381,7 +386,6 @@ static void mve_op_mul(MVE_VM *vm)
     MVE_ASSERT_REGISTER(reg_op1, "MUL failed!", vm);
     MVE_ASSERT_REGISTER(reg_op2, "MUL failed!", vm);
 
-
     vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i * vm->registers.all[reg_op2].i;
 }
 
@@ -396,13 +400,13 @@ static void mve_op_div(MVE_VM *vm)
     MVE_ASSERT_REGISTER(reg_op1, "DIV failed!", vm);
     MVE_ASSERT_REGISTER(reg_op2, "DIV failed!", vm);
 
-
     vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i / vm->registers.all[reg_op2].i;
 }
 
 
 static void mve_op_invoke(MVE_VM *vm) 
 {
+    // The function index according to the header declaration order.
     uint16_t function_index = mve_request_uint16(vm);
 
     MVE_ASSERT(vm->external_functions_count > function_index, vm, MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE, "INVOKE failed! Invalid function index.");
@@ -412,9 +416,9 @@ static void mve_op_invoke(MVE_VM *vm)
 }
 
 
-static void mve_op_bgn(MVE_VM *vm) 
+static void mve_op_scope(MVE_VM *vm) 
 {
-    MVE_ASSERT(vm->scope_index + 1 < MVE_SCOPE_LIMIT, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "BGN failed! There cannot be no more scopes than MVE_SCOPE_LIMIT.");
+    MVE_ASSERT(vm->scope_index + 1 < MVE_SCOPE_LIMIT, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "SCOPE failed! There cannot be no more scopes than MVE_SCOPE_LIMIT.");
 
     vm->scope_index++;
     vm->scopes[vm->scope_index].stack_base = vm->stack_index;
@@ -434,8 +438,61 @@ static void mve_op_end(MVE_VM *vm)
         mve_jump_to_program_index(vm, program_index);
     }
 
+    // Reset the program index of the scope, otherwise JMPs would also bring back to this location.
     vm->scopes[vm->scope_index].program_index = 0;
     vm->scope_index--;
+}
+
+
+static void mve_op_cmp(MVE_VM *vm) 
+{
+    uint8_t operation = mve_request_uint8(vm);
+
+    MVE_ASSERT(operation <= MVE_CMP_LESSEQUAL, vm, MVE_ERROR_UNRECOGNIZED_CMP_OPERATION, "CMP failed! Unrecognized compare operation.");
+
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm); 
+
+    MVE_ASSERT_REGISTER(reg_result, "CMP failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "CMP failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "CMP failed!", vm);
+
+    switch (operation)
+    {
+    case MVE_CMP_EQUAL:
+        vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i == vm->registers.all[reg_op2].i;
+        break;
+    case MVE_CMP_NOTEQUAL:
+        vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i != vm->registers.all[reg_op2].i;
+        break;
+    case MVE_CMP_GREATER:
+        vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i > vm->registers.all[reg_op2].i;
+        break;
+    case MVE_CMP_LESS:
+        vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i < vm->registers.all[reg_op2].i;
+        break;
+     case MVE_CMP_GREATEREQUAL:
+        vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i >= vm->registers.all[reg_op2].i;
+        break;
+    case MVE_CMP_LESSEQUAL:
+        vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i <= vm->registers.all[reg_op2].i;
+        break;
+    default:
+        break;
+    }
+}
+
+
+static void mve_op_jmp(MVE_VM *vm) 
+{
+    uint8_t reg = mve_request_uint8(vm);
+    MVE_ASSERT_REGISTER(reg, "JMP failed!", vm);
+
+    uint32_t index = mve_request_uint32(vm);
+
+    if (vm->registers.all[reg].i)
+        mve_jump_to_program_index(vm, index);
 }
 
 
@@ -446,6 +503,7 @@ static void mve_op_call(MVE_VM *vm) {
     if (vm->scope_index + 1 >= MVE_SCOPE_LIMIT)
         return;
     
+    // Set the program index of the next scope, so after ending the next scope, the VM will go back to this location.
     #ifdef MVE_LOCAL_PROGRAM
         vm->scopes[vm->scope_index + 1].program_index = vm->buffer_index;
     #else
@@ -453,7 +511,6 @@ static void mve_op_call(MVE_VM *vm) {
     #endif
     
     mve_jump_to_program_index(vm, index);
-    
 }
 
 
@@ -516,6 +573,8 @@ void mve_start(MVE_VM *vm)
 {
     vm->is_running = true;
 
+    // Reset the scopes because they are not set at runtime, unless on CALL instructions.
+    // Without this, JMP instructions will misbehave.
     for (uint32_t i = 0; i < MVE_SCOPE_LIMIT; i++)
         vm->scopes[i].program_index = 0;
 }
@@ -563,14 +622,20 @@ void mve_run(MVE_VM *vm)
     case MVE_OP_DIV:
         mve_op_div(vm);
         break;
-    case MVE_OP_BGN:
-        mve_op_bgn(vm);
+    case MVE_OP_SCOPE:
+        mve_op_scope(vm);
         break;
     case MVE_OP_END:
         mve_op_end(vm);
         break;
     case MVE_OP_CALL:
         mve_op_call(vm);
+        break;
+    case MVE_OP_CMP:
+        mve_op_cmp(vm);
+        break;
+    case MVE_OP_JMP:
+        mve_op_jmp(vm);
         break;
     case MVE_OP_EOP:
         mve_stop(vm);

@@ -55,51 +55,65 @@
 #define MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE        2       // Happens when calling an external functions, which index is invalid.
 #define MVE_ERROR_REGISTER_OUT_OF_RANGE                 3       // Happens when accessing an invalid register, that is smaller than 0 or bigger than MVE_REGISTERS_LIMIT.
 #define MVE_ERROR_SCOPE_OUT_OF_RANGE                    4       // Happens when creating or deleting a scope that is out of range.
+#define MVE_ERROR_UNRECOGNIZED_CMP_OPERATION            5       // Happens when a compare instruction has an unrecognized operation that is not between 0 and 5.
 #define MVE_ERROR_UNDEFINED_OP                          57      // Happens when the OP of the next instruction is not recognized.
 
 
-#define MVE_OP_EOP                      (uint8_t) 0             // 	Indicates the end of the program. Stops the virtual machine.
+#define MVE_OP_EOP                      ((uint8_t) 0)           // Indicates the end of the program. Stops the virtual machine.
 
-#define MVE_OP_PUSH                     (uint8_t) 1             // Push a value into the stack.
-#define MVE_OP_POP                      (uint8_t) 2             // Pop a value from the stack.
-#define MVE_OP_LDR                      (uint8_t) 3             // Load bytes from the stack into a register.
-#define MVE_OP_STR                      (uint8_t) 4             // Set bytes of the stack from a register.
-#define MVE_OP_LDI                      (uint8_t) 5             // Load an immediate constant value into a register.
-#define MVE_OP_MOV                      (uint8_t) 6             // Copies the value from a register into another.
-#define MVE_OP_NEG                      (uint8_t) 7             // Negates a register.
-#define MVE_OP_INVOKE                   (uint8_t) 8             // Call a linked external function.
-#define MVE_OP_ADD                      (uint8_t) 9             // Adds 2 registers.
-#define MVE_OP_SUB                      (uint8_t) 10            // Subtracts 2 registers.
-#define MVE_OP_MUL                      (uint8_t) 11            // Multiplies 2 registers.
-#define MVE_OP_DIV                      (uint8_t) 12            // Divides 2 registers.
-#define MVE_OP_BGN                      (uint8_t) 13            // Creates a new scope.
-#define MVE_OP_END                      (uint8_t) 14            // Finishes the previous scope.
-#define MVE_OP_CMP                      (uint8_t) 15
-#define MVE_OP_AND                      (uint8_t) 16
-#define MVE_OP_ORR                      (uint8_t) 17
-#define MVE_OP_JMP                      (uint8_t) 18
-#define MVE_OP_CALL                     (uint8_t) 19            // Jumps to a location. Creating and ending a scope will make it return to where it was called.
-
-
-#define MVE_OP_ITOF                     (uint8_t) 64
-#define MVE_OP_FTOI                     (uint8_t) 65
-#define MVE_OP_FADD                     (uint8_t) 66
-#define MVE_OP_FSUB                     (uint8_t) 67
-#define MVE_OP_FMUL                     (uint8_t) 68
-#define MVE_OP_FDIV                     (uint8_t) 69
-#define MVE_OP_FCMP                     (uint8_t) 70
-#define MVE_OP_FNEG                     (uint8_t) 71
-
-#define MVE_OP_ALLOC                    (uint8_t) 128
-#define MVE_OP_FREE                     (uint8_t) 129
+#define MVE_OP_PUSH                     ((uint8_t) 1)           // Push a value into the stack.
+#define MVE_OP_POP                      ((uint8_t) 2)           // Pop a value from the stack.
+#define MVE_OP_LDR                      ((uint8_t) 3)           // Load bytes from the stack into a register.
+#define MVE_OP_STR                      ((uint8_t) 4)           // Set bytes of the stack from a register.
+#define MVE_OP_LDI                      ((uint8_t) 5)           // Load an immediate constant value into a register.
+#define MVE_OP_MOV                      ((uint8_t) 6)           // Copies the value from a register into another.
+#define MVE_OP_NEG                      ((uint8_t) 7)           // Negates a register.
+#define MVE_OP_INVOKE                   ((uint8_t) 8)           // Call a linked external function.
+#define MVE_OP_ADD                      ((uint8_t) 9)           // Adds 2 registers.
+#define MVE_OP_SUB                      ((uint8_t) 10)          // Subtracts 2 registers.
+#define MVE_OP_MUL                      ((uint8_t) 11)          // Multiplies 2 registers.
+#define MVE_OP_DIV                      ((uint8_t) 12)          // Divides 2 registers.
+#define MVE_OP_SCOPE                    ((uint8_t) 13)          // Creates a new scope.
+#define MVE_OP_END                      ((uint8_t) 14)          // Finishes the previous scope.
+#define MVE_OP_CMP                      ((uint8_t) 15)          // Compares 2 registers.
+#define MVE_OP_JMP                      ((uint8_t) 16)          // Jumps to a location if the value of the given register is not 0.
+#define MVE_OP_CALL                     ((uint8_t) 17)          // Jumps to a location. Creating and ending a scope will make it return to where it was called.
+#define MVE_OP_AND                      ((uint8_t) 18)
+#define MVE_OP_ORR                      ((uint8_t) 19)
+#define MVE_OP_NOT                      ((uint8_t) 20)
+#define MVE_OP_LSL                      ((uint8_t) 21)
+#define MVE_OP_LSR                      ((uint8_t) 22)
+#define MVE_OP_XOR                      ((uint8_t) 23)
 
 
-#define MVE_R0                          (uint8_t) 0
-#define MVE_R1                          (uint8_t) 1
-#define MVE_R2                          (uint8_t) 2
-#define MVE_R3                          (uint8_t) 3
-#define MVE_R4                          (uint8_t) 4
-#define MVE_RR                          (uint8_t) 5
+#define MVE_OP_ITOF                     ((uint8_t) 32)
+#define MVE_OP_FTOI                     ((uint8_t) 33)
+#define MVE_OP_FADD                     ((uint8_t) 34)
+#define MVE_OP_FSUB                     ((uint8_t) 35)
+#define MVE_OP_FMUL                     ((uint8_t) 36)
+#define MVE_OP_FDIV                     ((uint8_t) 37)
+#define MVE_OP_FCMP                     ((uint8_t) 38)
+#define MVE_OP_FNEG                     ((uint8_t) 39)
+
+#define MVE_OP_ALLOC                    ((uint8_t) 64)
+#define MVE_OP_FREE                     ((uint8_t) 65)
+
+
+#define MVE_R0                          ((uint8_t) 0)
+#define MVE_R1                          ((uint8_t) 1)
+#define MVE_R2                          ((uint8_t) 2)
+#define MVE_R3                          ((uint8_t) 3)
+#define MVE_R4                          ((uint8_t) 4)
+#define MVE_RR                          ((uint8_t) 5)
+
+
+#define MVE_CMP_EQUAL                   ((uint8_t) 0)
+#define MVE_CMP_NOTEQUAL                ((uint8_t) 1)
+#define MVE_CMP_GREATER                 ((uint8_t) 2)
+#define MVE_CMP_LESS                    ((uint8_t) 3)
+#define MVE_CMP_GREATEREQUAL            ((uint8_t) 4)
+#define MVE_CMP_LESSEQUAL               ((uint8_t) 5)
+
 
 
 #define MVE_REGISTERS_LIMIT 6
