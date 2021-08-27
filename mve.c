@@ -514,6 +514,88 @@ static void mve_op_call(MVE_VM *vm) {
 }
 
 
+static void mve_op_and(MVE_VM *vm) 
+{
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "AND failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "AND failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "AND failed!", vm);
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i & vm->registers.all[reg_op2].i;
+}
+
+
+static void mve_op_orr(MVE_VM *vm) 
+{
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "ORR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "ORR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "ORR failed!", vm);
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i | vm->registers.all[reg_op2].i;
+}
+
+
+static void mve_op_not(MVE_VM *vm) 
+{
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "NOT failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "NOT failed!", vm);
+
+    vm->registers.all[reg_result].i = ~vm->registers.all[reg_op1].i;
+}
+
+
+static void mve_op_lsl(MVE_VM *vm) 
+{
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "LSL failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "LSL failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "LSL failed!", vm);
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i << vm->registers.all[reg_op2].i;
+}
+
+
+static void mve_op_xor(MVE_VM *vm) 
+{
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "XOR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "XOR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "XOR failed!", vm);
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i ^ vm->registers.all[reg_op2].i;
+}
+
+
+static void mve_op_lsr(MVE_VM *vm) 
+{
+    uint8_t reg_result = mve_request_uint8(vm);
+    uint8_t reg_op1 = mve_request_uint8(vm);
+    uint8_t reg_op2 = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_result, "LSR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op1, "LSR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_op2, "LSR failed!", vm);
+
+    vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i >> vm->registers.all[reg_op2].i;
+}
+
+
 #ifdef MVE_LOCAL_PROGRAM
 bool mve_init(MVE_VM *vm, uint8_t *program) 
 {
@@ -628,14 +710,32 @@ void mve_run(MVE_VM *vm)
     case MVE_OP_END:
         mve_op_end(vm);
         break;
-    case MVE_OP_CALL:
-        mve_op_call(vm);
-        break;
     case MVE_OP_CMP:
         mve_op_cmp(vm);
         break;
     case MVE_OP_JMP:
         mve_op_jmp(vm);
+        break;
+    case MVE_OP_CALL:
+        mve_op_call(vm);
+        break;
+    case MVE_OP_AND:
+        mve_op_and(vm);
+        break;
+    case MVE_OP_ORR:
+        mve_op_orr(vm);
+        break;
+    case MVE_OP_NOT:
+        mve_op_not(vm);
+        break;
+    case MVE_OP_LSL:
+        mve_op_lsl(vm);
+        break;
+    case MVE_OP_LSR:
+        mve_op_lsr(vm);
+        break;
+    case MVE_OP_XOR:
+        mve_op_xor(vm);
         break;
     case MVE_OP_EOP:
         mve_stop(vm);

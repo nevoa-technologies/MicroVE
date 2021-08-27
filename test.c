@@ -84,6 +84,7 @@ int main() {
                             MVE_OP_CMP, MVE_CMP_GREATER, MVE_R2, MVE_R0, MVE_R1,
                             MVE_OP_JMP, MVE_R2, 106, 0, 0, 0,
                             MVE_OP_INVOKE, 0, 0,
+                            MVE_OP_NOT, MVE_R0, MVE_R0,
                             MVE_OP_EOP
     };
 
