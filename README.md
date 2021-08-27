@@ -44,7 +44,7 @@ You can declare a few defines in your C project to indicate the processor specs 
 | Name	| Default Value | Description	|
 | - | - | -	|
 | `MVE_EXTERNAL_FUNCTIONS_LIMIT` | 8 | The maximum amount of external functions. (External functions are functions from your C project that will be called through your MicroVE program) |
-| `MVE_BRANCH_LIMIT` | 8 | The maximum amount of branches. |
+| `MVE_SCOPE_LIMIT` | 8 | The maximum amount of branches. |
 | `MVE_BUFFER_SIZE` | 128 | The amount of memory used by the program buffer. This is used to store the program. |
 | `MVE_STACK_SIZE` | 128 | The amount of memory used by the stack. This is used to store variables and other stuff. |
 | `MVE_HEAP_SIZE` | 128 | The amount of memory used by the heap. This is used to store name of external functions and other runtime values. The external function names are cleared once the VM starts. |
