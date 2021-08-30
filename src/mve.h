@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "defines.h"
+
 
 #define MVE_VERSION_MAJOR ((uint16_t)1) // Bytecode major version. The program must have the same version.
 #define MVE_VERSION_MINOR ((uint16_t)0) // Bytecode minor version. The program must have a lower or same version.
@@ -14,21 +16,29 @@
 #define MVE_EXTERNAL_FUNCTIONS_LIMIT 16
 #endif
 
+
+#ifdef MVE_LOCAL_PROGRAM
+#define MVE_BUFFER_SIZE UINT32_MAX
+#endif
+
 #ifndef MVE_BUFFER_SIZE
 #define MVE_BUFFER_SIZE 128
-#endif
-
-#ifndef MVE_STACK_SIZE
-#define MVE_STACK_SIZE 128
-#endif
-
-#ifndef MVE_HEAP_SIZE
-#define MVE_HEAP_SIZE 128
 #endif
 
 #if MVE_BUFFER_SIZE < 32
 #error MVE_BUFFER_SIZE must be greater than 32.
 #endif
+
+
+#ifndef MVE_STACK_SIZE
+#define MVE_STACK_SIZE 128
+#endif
+
+
+#ifndef MVE_HEAP_SIZE
+#define MVE_HEAP_SIZE 128
+#endif
+
 
 #ifndef MVE_SCOPE_LIMIT
 #define MVE_SCOPE_LIMIT 8
@@ -38,9 +48,6 @@
 #error MVE_SCOPE_LIMIT must be greater than 4.
 #endif
 
-#ifdef MVE_LOCAL_PROGRAM
-#define MVE_BUFFER_SIZE UINT32_MAX
-#endif
 
 #ifdef MVE_ERROR_LOG
 #define STR(x) #x
@@ -78,12 +85,12 @@
 #define MVE_OP_CMP                      ((uint8_t) 15)          // Compares 2 registers.
 #define MVE_OP_JMP                      ((uint8_t) 16)          // Jumps to a location if the value of the given register is not 0.
 #define MVE_OP_CALL                     ((uint8_t) 17)          // Jumps to a location. Creating and ending a scope will make it return to where it was called.
-#define MVE_OP_AND                      ((uint8_t) 18)
-#define MVE_OP_ORR                      ((uint8_t) 19)
-#define MVE_OP_NOT                      ((uint8_t) 20)
-#define MVE_OP_LSL                      ((uint8_t) 21)
-#define MVE_OP_LSR                      ((uint8_t) 22)
-#define MVE_OP_XOR                      ((uint8_t) 23)
+#define MVE_OP_AND                      ((uint8_t) 18)          // Logical And. Performs a bitwise AND on 2 registers.
+#define MVE_OP_ORR                      ((uint8_t) 19)          // Logical Or. Performs a bitwise OR on 2 registers.
+#define MVE_OP_NOT                      ((uint8_t) 20)          // Logical Not. Performs a bitwise NOT on 2 registers.
+#define MVE_OP_LSL                      ((uint8_t) 21)          // Logical Shift Left. Performs a bitwise shift left on 2 registers.
+#define MVE_OP_LSR                      ((uint8_t) 22)          // Logical Shift Right. Performs a bitwise shift right on 2 registers.
+#define MVE_OP_XOR                      ((uint8_t) 23)          // Logical Exclusive Or. Performs a bitwise XOR on 2 registers.
 
 
 #define MVE_OP_ITOF                     ((uint8_t) 32)

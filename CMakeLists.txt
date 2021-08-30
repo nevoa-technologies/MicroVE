@@ -1,7 +1,14 @@
 cmake_minimum_required (VERSION 3.8)
+set (CMAKE_C_STANDARD 99)
 
 project (MicroVE)
 
-file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
+option (MICROVE_BUILD_EXAMPLES "MicroVE Build Examples" ON)
+option (MICROVE_BUILD_STATIC_LIB "MicroVE Build Static Library" ON)
+option (MICROVE_BUILD_SHARED_LIB "MicroVE Build Shared Library" ON)
 
-add_library (MicroVE ${IMGUI_PUBLIC_HEADERS} ${sources})
+if (MICROVE_BUILD_EXAMPLES)
+    add_subdirectory (examples)
+endif()
+
+add_subdirectory (src)

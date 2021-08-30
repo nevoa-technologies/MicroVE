@@ -2,7 +2,7 @@
 
 #define MVE_EXTERNAL_FUNCTIONS_LIMIT 8
 
-#define MVE_BUFFER_SIZE 128
+//#define MVE_BUFFER_SIZE 128
 
 #define MVE_STACK_SIZE 128
 #define MVE_HEAP_SIZE 128
@@ -16,7 +16,7 @@
 //#define MVE_USE_64BIT_TYPES
 //#define MVE_BIG_ENDIAN
 
-#include "mve.c"
+#include "../../src/mve.c"
 #include <stdio.h>
 
 void load_next_block(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t read_length) {
@@ -39,11 +39,6 @@ void load_next_block(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t 
 
     fclose(fileptr);             
 }
-
-typedef struct {
-    char c1;
-    char c2;
-} asasd;
 
 
 void hello(MVE_VM *vm) {
