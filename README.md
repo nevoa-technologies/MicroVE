@@ -23,7 +23,7 @@ At the moment, MicroVE is not usable. The version 1.0 will be released as soon a
 - [x] Interpret the program header
 - [x] Link C functions into the virtual machine
 - Execution
-    - [x] Push and pop values from the stack
+    - [x] Reserve and populate stack memory
     - [x] Load values from the stack into registers and from registers into the stack
     - [x] Call external linked functions
     - [x] Basic arithmetic operations (sum, subtraction, multiplication and division)
@@ -77,27 +77,24 @@ int main()
                             0x02, 0x00, 0x00, 0x00, // External functions count
                             'h', 'e', 'l', 'l', 'o', 0x00, // Function 1
                             'f', 'u', 'n', 'c', '2', 0x00,  // Function 2,
-                            MVE_OP_PUSH, 2, 'a', 'b',
-                            MVE_OP_POP, 2,
-                            MVE_OP_PUSH, 2, 'c', 'd',
-                            MVE_OP_POP, 1,
-                            MVE_OP_PUSH, 2, 4, 5,
+                            0x02, 0, 0, 0, 4, 5, // The main scope has 2 bytes of memory, 1 byte with the value 4, and other with 5.
                             MVE_OP_INVOKE, 0, 0,
-                            MVE_OP_LDR, MVE_R0, 1, 0, 0, 0, 1,
-                            MVE_OP_LDR, MVE_R1, 2, 0, 0, 0, 1,
+                            MVE_OP_LDI, MVE_R3, 1, 0,
+                            MVE_OP_LDI, MVE_R4, 1, 1,
+                            MVE_OP_LDR, MVE_R0, MVE_R3, MVE_R4,
+                            MVE_OP_LDR, MVE_R1, MVE_R4, MVE_R4,
                             MVE_OP_ADD, MVE_R0, MVE_R0, MVE_R1,
                             MVE_OP_MOV, MVE_R1, MVE_R0,
                             MVE_OP_NEG, MVE_R0,
-                            MVE_OP_STR, MVE_R0, 1, 0, 0, 0, 1,
-                            MVE_OP_LDI, MVE_R0, 1, 0,
-                            MVE_OP_CALL, 78, 0, 0, 0,
-                            MVE_OP_SCOPE,
+                            MVE_OP_STR, MVE_R0, MVE_R3, MVE_R4,
+                            MVE_OP_CALL, 63, 0, 0, 0,
+                            MVE_OP_SCOPE, 0, 0, 0, 0,
                             MVE_OP_ADD, MVE_R0, MVE_R0, MVE_R1,
                             MVE_OP_END,
                             MVE_OP_LDI, MVE_R0, 1, 4,
                             MVE_OP_LDI, MVE_R1, 1, 5,
                             MVE_OP_CMP, MVE_CMP_GREATER, MVE_R2, MVE_R0, MVE_R1,
-                            MVE_OP_JMP, MVE_R2, 106, 0, 0, 0,
+                            MVE_OP_JMP, MVE_R2, 95, 0, 0, 0,
                             MVE_OP_INVOKE, 0, 0,
                             MVE_OP_NOT, MVE_R0, MVE_R0,
                             MVE_OP_EOP
