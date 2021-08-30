@@ -180,6 +180,19 @@ static uint8_t mve_request_uint8(MVE_VM *vm)
 }
 
 
+static void mve_load_scope_memory(MVE_VM *vm) 
+{
+    uint32_t length = mve_request_uint32(vm);
+
+    MVE_ASSERT_STACK_INDEX(length + vm->stack_pointer < MVE_STACK_SIZE, "Error loading scope memory.", vm);
+
+    for (uint32_t i = 0; i < length; i++) {
+        vm->stack[vm->stack_pointer] = mve_request_uint8(vm);
+        vm->stack_pointer++;
+    }
+}
+
+
 /**
  * @brief Loads and processes the header of the program.
  * It the bytecode version of the program is not compatible, it will abort.
@@ -212,33 +225,66 @@ static bool mve_load_header(MVE_VM *vm)
 
     vm->external_functions_count = strings_counter;
 
+    mve_load_scope_memory(vm);
+
     return true;
 }
 
 
-static void mve_op_push(MVE_VM *vm) 
+static void mve_op_lds(MVE_VM *vm) 
 {
-    // The size of the value to push.
-    uint8_t size = mve_request_uint8(vm);
+    // The register to receive the value.
+    uint8_t reg = mve_request_uint8(vm);
 
-    MVE_ASSERT_STACK_INDEX(vm->stack_index + size, "PUSH failed!", vm);
+    MVE_ASSERT_REGISTER(reg, "LDS failed!", vm);
 
-    // Write the value into the stack.
-    for (uint16_t i = 0; i < size; i++)
-        vm->stack[vm->stack_index + i] = mve_request_uint8(vm);
+    // Index of the stack and length of the bytes.
+    uint32_t stack_end_index = mve_request_uint32(vm);
+    uint8_t length = mve_request_uint8(vm);
 
-    vm->stack_index += size;
+    MVE_ASSERT_STACK_INDEX(stack_end_index, "LDS failed!", vm);
+    MVE_ASSERT_STACK_INDEX(stack_end_index + length, "LDS failed!", vm);
+
+    MVE_Value value;
+    value.i = 0;
+
+    // Copy the bytes from the stack into the value.
+    for (uint8_t i = 0; i < length; i++)
+    {
+        #ifdef MVE_BIG_ENDIAN
+            value.b[length - i - 1] = vm->stack[stack_end_index + i];
+        #else
+            value.b[i] = vm->stack[stack_end_index + i];
+        #endif
+    }
+
+    vm->registers.all[reg] = value;
 }
 
 
-static void mve_op_pop(MVE_VM *vm) 
+static void mve_op_sts(MVE_VM *vm) 
 {
-    // The size of the value to pop.
-    uint8_t size = mve_request_uint8(vm);
+// The register to load the value from.
+    uint8_t reg = mve_request_uint8(vm);
 
-    MVE_ASSERT_STACK_INDEX(vm->stack_index - size, "POP failed!", vm);
+    MVE_ASSERT_REGISTER(reg, "STS failed!", vm);
 
-    vm->stack_index -= size;
+    // Index of the stack and length of the bytes.
+    uint32_t stack_end_index = mve_request_uint32(vm);
+    uint8_t length = mve_request_uint8(vm);
+
+    MVE_ASSERT_STACK_INDEX(stack_end_index, "STS failed!", vm);
+    MVE_ASSERT_STACK_INDEX(stack_end_index + length, "STS failed!", vm);
+
+    // Copy the bytes from the register into the stack.
+    for (uint8_t i = 0; i < length; i++)
+    {
+        #ifdef MVE_BIG_ENDIAN
+            vm->stack[stack_end_index + i] = vm->registers.all[reg].b[length - i - 1];
+        #else
+            vm->stack[stack_end_index + i] = vm->registers.all[reg].b[i];
+        #endif
+    }
 }
 
 
@@ -248,25 +294,29 @@ static void mve_op_ldr(MVE_VM *vm)
     // The register to receive the value.
     uint8_t reg = mve_request_uint8(vm);
 
+    // The register that contains the index to load.
+    uint8_t reg_index = mve_request_uint8(vm);
+
+    // The register that contains the amount o bytes to load.
+    uint8_t reg_length = mve_request_uint8(vm);
+
     MVE_ASSERT_REGISTER(reg, "LDR failed!", vm);
-
-    // Index of the stack and length of the bytes.
-    uint32_t stack_end_index = mve_request_uint32(vm);
-    uint8_t length = mve_request_uint8(vm);
-
-    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index, "LDR failed!", vm);
-    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index + length, "LDR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_index, "LDR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_length, "LDR failed!", vm);
 
     MVE_Value value;
     value.i = 0;
+
+    uint32_t stack_index = vm->registers.all[reg_index].i;
+    uint32_t length = vm->registers.all[reg_length].i;
 
     // Copy the bytes from the stack into the value.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            value.b[length - i - 1] = vm->stack[vm->stack_index - stack_end_index + i];
+            value.b[length - i - 1] = vm->stack[stack_index + i];
         #else
-            value.b[i] = vm->stack[vm->stack_index - stack_end_index + i];
+            value.b[i] = vm->stack[stack_index + i];
         #endif
     }
 
@@ -281,20 +331,29 @@ static void mve_op_str(MVE_VM *vm)
 
     MVE_ASSERT_REGISTER(reg, "STR failed!", vm);
 
-    // Index of the stack and length of the bytes.
-    uint32_t stack_end_index = mve_request_uint32(vm);
-    uint8_t length = mve_request_uint8(vm);
+    // The register that contains the index to load.
+    uint8_t reg_index = mve_request_uint8(vm);
 
-    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index, "STR failed!", vm);
-    MVE_ASSERT_STACK_INDEX(vm->stack_index - stack_end_index + length, "STR failed!", vm);
+    // The register that contains the amount o bytes to load.
+    uint8_t reg_length = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg, "LDR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_index, "LDR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_length, "LDR failed!", vm);
+
+    MVE_Value value;
+    value.i = 0;
+
+    uint32_t stack_index = vm->registers.all[reg_index].i;
+    uint32_t length = vm->registers.all[reg_length].i;
 
     // Copy the bytes from the register into the stack.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            vm->stack[vm->stack_index - stack_end_index + i] = vm->registers.all[reg].b[length - i - 1];
+            vm->stack[stack_index + i] = vm->registers.all[reg].b[length - i - 1];
         #else
-            vm->stack[vm->stack_index - stack_end_index + i] = vm->registers.all[reg].b[i];
+            vm->stack[stack_index + i] = vm->registers.all[reg].b[i];
         #endif
     }
 }
@@ -311,6 +370,7 @@ static void mve_op_ldi(MVE_VM *vm)
     uint8_t length = mve_request_uint8(vm);
 
     MVE_Value value;
+    value.i = 0;
 
     // Get the bytes to write into the register.
     for (uint8_t i = 0; i < length; i++)
@@ -411,7 +471,7 @@ static void mve_op_invoke(MVE_VM *vm)
 
     MVE_ASSERT(vm->external_functions_count > function_index, vm, MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE, "INVOKE failed! Invalid function index.");
 
-    void (*func) () = vm->external_functions[0];
+    void (*func) (MVE_VM *) = vm->external_functions[0];
     func(vm);
 }
 
@@ -421,7 +481,9 @@ static void mve_op_scope(MVE_VM *vm)
     MVE_ASSERT(vm->scope_index + 1 < MVE_SCOPE_LIMIT, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "SCOPE failed! There cannot be no more scopes than MVE_SCOPE_LIMIT.");
 
     vm->scope_index++;
-    vm->scopes[vm->scope_index].stack_base = vm->stack_index;
+    vm->scopes[vm->scope_index].stack_base = vm->stack_pointer;
+
+    mve_load_scope_memory(vm);
 }
 
 
@@ -429,7 +491,7 @@ static void mve_op_end(MVE_VM *vm)
 {
     MVE_ASSERT(vm->scope_index - 1 >= 0, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "END failed! There is no scope to end.");
 
-    vm->stack_index = vm->scopes[vm->scope_index].stack_base;
+    vm->stack_pointer = vm->scopes[vm->scope_index].stack_base;
 
     uint32_t program_index = vm->scopes[vm->scope_index].program_index;
 
@@ -607,7 +669,7 @@ bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint3
     vm->program_index = 0;
     vm->is_running = false;
     vm->buffer_index = 0;
-    vm->stack_index = 0;
+    vm->stack_pointer = 0;
     vm->scope_index = 0;
 
     for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
@@ -668,17 +730,17 @@ void mve_run(MVE_VM *vm)
 
     switch (next_operation)
     {
-    case MVE_OP_PUSH:
-        mve_op_push(vm);
-        break;
-    case MVE_OP_POP:
-        mve_op_pop(vm);
-        break;
     case MVE_OP_LDR:
         mve_op_ldr(vm);
         break;
     case MVE_OP_STR:
         mve_op_str(vm);
+        break;
+    case MVE_OP_LDS:
+        mve_op_lds(vm);
+        break;
+    case MVE_OP_STS:
+        mve_op_sts(vm);
         break;
     case MVE_OP_LDI:
         mve_op_ldi(vm);

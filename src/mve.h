@@ -68,10 +68,10 @@
 
 #define MVE_OP_EOP                      ((uint8_t) 0)           // Indicates the end of the program. Stops the virtual machine.
 
-#define MVE_OP_PUSH                     ((uint8_t) 1)           // Push a value into the stack.
-#define MVE_OP_POP                      ((uint8_t) 2)           // Pop a value from the stack.
-#define MVE_OP_LDR                      ((uint8_t) 3)           // Load bytes from the stack into a register.
-#define MVE_OP_STR                      ((uint8_t) 4)           // Set bytes of the stack from a register.
+#define MVE_OP_LDR                      ((uint8_t) 1)           // Load bytes from the stack into a register, using an index and length from registers.
+#define MVE_OP_STR                      ((uint8_t) 2)           // Set bytes of the stack from a register, using an index and length from registers.
+#define MVE_OP_LDS                      ((uint8_t) 3)           // Load bytes from the stack into a register, using a stack index.
+#define MVE_OP_STS                      ((uint8_t) 4)           // Set bytes of the stack from a register, using a stack index.
 #define MVE_OP_LDI                      ((uint8_t) 5)           // Load an immediate constant value into a register.
 #define MVE_OP_MOV                      ((uint8_t) 6)           // Copies the value from a register into another.
 #define MVE_OP_NEG                      ((uint8_t) 7)           // Negates a register.
@@ -158,16 +158,16 @@
 #endif
 
 
-#define MVE_GET_STACK(vm, index) (vm->stack + vm->stack_index - index)
-#define MVE_GET_STACK_UINT8(vm, index) MVE_BYTES_TO_UINT8(vm->stack, vm->stack_index - index)
-#define MVE_GET_STACK_UINT16(vm, index) MVE_BYTES_TO_UINT16(vm->stack, vm->stack_index - index)
-#define MVE_GET_STACK_UINT32(vm, index) MVE_BYTES_TO_UINT32(vm->stack, vm->stack_index - index)
-#define MVE_GET_STACK_UINT64(vm, index) MVE_BYTES_TO_UINT64(vm->stack, vm->stack_index - index)
+#define MVE_GET_STACK(vm, index) (vm->stack + vm->stack_pointer - index)
+#define MVE_GET_STACK_UINT8(vm, index) MVE_BYTES_TO_UINT8(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK_UINT16(vm, index) MVE_BYTES_TO_UINT16(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK_UINT32(vm, index) MVE_BYTES_TO_UINT32(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK_UINT64(vm, index) MVE_BYTES_TO_UINT64(vm->stack, vm->stack_pointer - index)
 
-#define MVE_GET_STACK_INT8(vm, index) MVE_BYTES_TO_INT8(vm->stack, vm->stack_index - index)
-#define MVE_GET_STACK_INT16(vm, index) MVE_BYTES_TO_INT16(vm->stack, vm->stack_index - index)
-#define MVE_GET_STACK_INT32(vm, index) MVE_BYTES_TO_INT32(vm->stack, vm->stack_index - index)
-#define MVE_GET_STACK_INT64(vm, index) MVE_BYTES_TO_INT64(vm->stack, vm->stack_index - index)
+#define MVE_GET_STACK_INT8(vm, index) MVE_BYTES_TO_INT8(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK_INT16(vm, index) MVE_BYTES_TO_INT16(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK_INT32(vm, index) MVE_BYTES_TO_INT32(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK_INT64(vm, index) MVE_BYTES_TO_INT64(vm->stack, vm->stack_pointer - index)
 
 
 typedef uint8_t bool;
@@ -237,7 +237,7 @@ struct MVE_VM {
 
     uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
 
-    uint32_t stack_index;
+    uint32_t stack_pointer;
     uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
     uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
 
