@@ -68,10 +68,10 @@
 
 #define MVE_OP_EOP                      ((uint8_t) 0)           // Indicates the end of the program. Stops the virtual machine.
 
-#define MVE_OP_LDR                      ((uint8_t) 1)           // Load bytes from the stack into a register, using an index and length from registers.
-#define MVE_OP_STR                      ((uint8_t) 2)           // Set bytes of the stack from a register, using an index and length from registers.
-#define MVE_OP_LDS                      ((uint8_t) 3)           // Load bytes from the stack into a register, using a stack index.
-#define MVE_OP_STS                      ((uint8_t) 4)           // Set bytes of the stack from a register, using a stack index.
+#define MVE_OP_LDR                      ((uint8_t) 1)           // Load bytes from the stack into a register, using an address and length from registers.
+#define MVE_OP_STR                      ((uint8_t) 2)           // Set bytes of the stack from a register, using an address and length from registers.
+#define MVE_OP_LDS                      ((uint8_t) 3)           // Load bytes from the stack into a register, using a stack address.
+#define MVE_OP_STS                      ((uint8_t) 4)           // Set bytes of the stack from a register, using a stack address.
 #define MVE_OP_LDI                      ((uint8_t) 5)           // Load an immediate constant value into a register.
 #define MVE_OP_MOV                      ((uint8_t) 6)           // Copies the value from a register into another.
 #define MVE_OP_NEG                      ((uint8_t) 7)           // Negates a register.

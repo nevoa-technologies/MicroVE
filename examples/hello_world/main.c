@@ -9,7 +9,7 @@
 
 #define MVE_SCOPE_LIMIT 8
 
-#define MVE_LOCAL_PROGRAM
+//#define MVE_LOCAL_PROGRAM
 
 #define MVE_ERROR_LOG(vm, program_index, error_id, msg) printf("%s Program index: %u.", msg, program_index);
 
@@ -42,10 +42,9 @@ void load_next_block(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t 
 
 void hello(MVE_VM *vm) {
 
-    char c1 = MVE_GET_STACK_INT8(vm, 1);
-    char c2 = MVE_GET_STACK_INT8(vm, 2);
+    unsigned char c1 = MVE_GET_STACK_UINT8(vm, 1);
 
-    printf("Hello: %d %d.", (int) c1, (int) c2);
+    printf("Hello: %d. \n", (int) c1);
 }
 
 
@@ -80,10 +79,11 @@ int main() {
     };
 
     MVE_VM vm;
-    //mve_init(&vm, &load_next_block);
-    mve_init(&vm, program);
+    mve_init(&vm, &load_next_block);
+    //mve_init(&vm, program);
 
     mve_link_function(&vm, "hello", &hello);
+    mve_link_function(&vm, "print", &hello);
 
     mve_start(&vm);
 
