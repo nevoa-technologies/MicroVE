@@ -1,9 +1,3 @@
-# MicroVE (Work in Progress)
-MicroVE IT'S STILL IN EARLY DEVEOPMENT! IT SHOULD NOT BE USED AS IT IS!
-
-<br>
-<br>
-
 ![icon](https://raw.githubusercontent.com/nevoa-dev/micro-ve/master/icon.png)
 
 [![CMake](https://github.com/nevoa-dev/micro-ve/actions/workflows/cmake.yml/badge.svg?branch=master)](https://github.com/nevoa-dev/micro-ve/actions/workflows/cmake.yml)
