@@ -127,8 +127,7 @@
 
 
 #define MVE_ASSERT_REGISTER(reg, msg, vm) MVE_ASSERT(reg >= 0 && reg < MVE_REGISTERS_LIMIT, vm, MVE_ERROR_REGISTER_OUT_OF_RANGE, msg " Invalid register. The register cannot be negative or bigger than MVE_REGISTERS_LIMIT.");
-#define MVE_ASSERT_STACK_INDEX(index, msg, vm) MVE_ASSERT(index >= 0 && index < MVE_STACK_SIZE, vm, MVE_ERROR_STACK_OUT_OF_RANGE, msg " Stack index out of range. The index cannot be negative or bigger than MVE_STACK_SIZE.");
-
+#define MVE_ASSERT_STACK_ADDRESS(address, msg, vm) MVE_ASSERT(address >= 0 && address < MVE_STACK_SIZE, vm, MVE_ERROR_STACK_OUT_OF_RANGE, msg " Stack address out of range. The address cannot be negative or bigger than MVE_STACK_SIZE.");
 
 #ifdef MVE_BIG_ENDIAN
 
@@ -158,16 +157,16 @@
 #endif
 
 
-#define MVE_GET_STACK(vm, index) (vm->stack + vm->stack_pointer - index)
-#define MVE_GET_STACK_UINT8(vm, index) MVE_BYTES_TO_UINT8(vm->stack, vm->stack_pointer - index)
-#define MVE_GET_STACK_UINT16(vm, index) MVE_BYTES_TO_UINT16(vm->stack, vm->stack_pointer - index)
-#define MVE_GET_STACK_UINT32(vm, index) MVE_BYTES_TO_UINT32(vm->stack, vm->stack_pointer - index)
-#define MVE_GET_STACK_UINT64(vm, index) MVE_BYTES_TO_UINT64(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK(vm, address) (vm->stack + vm->stack_pointer - address)
+#define MVE_GET_STACK_UINT8(vm, address) MVE_BYTES_TO_UINT8(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK_UINT16(vm, address) MVE_BYTES_TO_UINT16(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK_UINT32(vm, address) MVE_BYTES_TO_UINT32(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK_UINT64(vm, address) MVE_BYTES_TO_UINT64(vm->stack, vm->stack_pointer - address)
 
-#define MVE_GET_STACK_INT8(vm, index) MVE_BYTES_TO_INT8(vm->stack, vm->stack_pointer - index)
-#define MVE_GET_STACK_INT16(vm, index) MVE_BYTES_TO_INT16(vm->stack, vm->stack_pointer - index)
-#define MVE_GET_STACK_INT32(vm, index) MVE_BYTES_TO_INT32(vm->stack, vm->stack_pointer - index)
-#define MVE_GET_STACK_INT64(vm, index) MVE_BYTES_TO_INT64(vm->stack, vm->stack_pointer - index)
+#define MVE_GET_STACK_INT8(vm, address) MVE_BYTES_TO_INT8(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK_INT16(vm, address) MVE_BYTES_TO_INT16(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK_INT32(vm, address) MVE_BYTES_TO_INT32(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK_INT64(vm, address) MVE_BYTES_TO_INT64(vm->stack, vm->stack_pointer - address)
 
 
 typedef uint8_t bool;

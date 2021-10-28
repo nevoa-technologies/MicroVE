@@ -129,7 +129,7 @@ inline static void mve_ensure_buffer_size(MVE_VM *vm, uint8_t length)
  * @param vm VM to read the next byte.
  * @return Returns the value readed.
  */
-static uint32_t mve_request_int32(MVE_VM *vm) 
+static inline uint32_t mve_request_int32(MVE_VM *vm) 
 {
     #ifndef MVE_LOCAL_PROGRAM
         mve_ensure_buffer_size(vm, 4);
@@ -148,7 +148,7 @@ static uint32_t mve_request_int32(MVE_VM *vm)
  * @param vm VM to read the next byte.
  * @return Returns the value readed.
  */
-static uint32_t mve_request_uint32(MVE_VM *vm) 
+static inline uint32_t mve_request_uint32(MVE_VM *vm) 
 {
     #ifndef MVE_LOCAL_PROGRAM
         mve_ensure_buffer_size(vm, 4);
@@ -167,7 +167,7 @@ static uint32_t mve_request_uint32(MVE_VM *vm)
  * @param vm VM to read the next byte.
  * @return Returns the value readed.
  */
-static uint32_t mve_request_uint16(MVE_VM *vm) 
+static inline uint32_t mve_request_uint16(MVE_VM *vm) 
 {
     #ifndef MVE_LOCAL_PROGRAM
         mve_ensure_buffer_size(vm, 2);
@@ -186,7 +186,7 @@ static uint32_t mve_request_uint16(MVE_VM *vm)
  * @param vm VM to read the next byte.
  * @return Returns the byte readed.
  */
-static uint8_t mve_request_uint8(MVE_VM *vm) 
+static inline uint8_t mve_request_uint8(MVE_VM *vm) 
 {
     #ifndef MVE_LOCAL_PROGRAM
         mve_ensure_buffer_size(vm, 1);
@@ -203,7 +203,7 @@ static void mve_load_scope_memory(MVE_VM *vm)
 {
     uint32_t length = mve_request_uint32(vm);
 
-    MVE_ASSERT_STACK_INDEX(length + vm->stack_pointer < MVE_STACK_SIZE, "Error loading scope memory.", vm);
+    MVE_ASSERT_STACK_ADDRESS(length + vm->stack_pointer < MVE_STACK_SIZE, "Error loading scope memory.", vm);
 
     for (uint32_t i = 0; i < length; i++) {
         vm->stack[vm->stack_pointer] = mve_request_uint8(vm);
@@ -268,16 +268,16 @@ static void mve_op_ldr(MVE_VM *vm)
     MVE_Value value;
     value.i = 0;
 
-    uint32_t stack_index = vm->registers.all[reg_index].i;
+    uint32_t stack_address = vm->registers.all[reg_index].i;
     uint32_t length = vm->registers.all[reg_length].i;
 
     // Copy the bytes from the stack into the value.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            value.b[length - i - 1] = vm->stack[stack_index + i];
+            value.b[length - i - 1] = vm->stack[stack_address + i];
         #else
-            value.b[i] = vm->stack[stack_index + i];
+            value.b[i] = vm->stack[stack_address + i];
         #endif
     }
 
@@ -305,16 +305,16 @@ static void mve_op_str(MVE_VM *vm)
     MVE_Value value;
     value.i = 0;
 
-    uint32_t stack_index = vm->registers.all[reg_index].i;
+    uint32_t stack_address = vm->registers.all[reg_index].i;
     uint32_t length = vm->registers.all[reg_length].i;
 
     // Copy the bytes from the register into the stack.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            vm->stack[stack_index + i] = vm->registers.all[reg].b[length - i - 1];
+            vm->stack[stack_address + i] = vm->registers.all[reg].b[length - i - 1];
         #else
-            vm->stack[stack_index + i] = vm->registers.all[reg].b[i];
+            vm->stack[stack_address + i] = vm->registers.all[reg].b[i];
         #endif
     }
 }
@@ -327,32 +327,32 @@ static void mve_op_lds(MVE_VM *vm)
 
     MVE_ASSERT_REGISTER(reg, "LDS failed!", vm);
 
-    // Index of the stack and length of the bytes.
-    int32_t stack_index = mve_request_uint32(vm);
+    // Address of the stack and length of the bytes.
+    int32_t stack_address = mve_request_uint32(vm);
     uint8_t length = mve_request_uint8(vm);
 
     MVE_Value value;
     value.i = 0;
 
-    uint32_t index = 0;
+    uint32_t address = 0;
 
-    // If the stack_index is negative then the end of the stack is used.
+    // If the stack_address is negative then the end of the stack is used.
     // This is used when accessing scope memory.
-    if (stack_index < 0)
-        index = vm->stack_pointer - (-stack_index);
+    if (stack_address < 0)
+        address = vm->stack_pointer - (-stack_address);
     else
-        index = stack_index;
+        address = stack_address;
 
-    MVE_ASSERT_STACK_INDEX(index, "LDS failed!", vm);
-    MVE_ASSERT_STACK_INDEX(index + length, "LDS failed!", vm);
+    MVE_ASSERT_STACK_ADDRESS(address, "LDS failed!", vm);
+    MVE_ASSERT_STACK_ADDRESS(address + length, "LDS failed!", vm);
 
     // Copy the bytes from the stack into the value.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            value.b[length - i - 1] = vm->stack[index + i];
+            value.b[length - i - 1] = vm->stack[address + i];
         #else
-            value.b[i] = vm->stack[index + i];
+            value.b[i] = vm->stack[address + i];
         #endif
     }
 
@@ -367,29 +367,29 @@ static void mve_op_sts(MVE_VM *vm)
 
     MVE_ASSERT_REGISTER(reg, "STS failed!", vm);
 
-    // Index of the stack and length of the bytes.
-    int32_t stack_index = mve_request_int32(vm);
+    // Address of the stack and length of the bytes.
+    int32_t stack_address = mve_request_int32(vm);
     uint8_t length = mve_request_uint8(vm);
 
-    uint32_t index = 0;
+    uint32_t address = 0;
 
-    // If the stack_index is negative then the end of the stack is used.
+    // If the stack_address is negative then the end of the stack is used.
     // This is used when accessing scope memory.
-    if (stack_index < 0)
-        index = vm->stack_pointer - (-stack_index);
+    if (stack_address < 0)
+        address = vm->stack_pointer - (-stack_address);
     else
-        index = stack_index;
+        address = stack_address;
 
-    MVE_ASSERT_STACK_INDEX(index, "STS failed!", vm);
-    MVE_ASSERT_STACK_INDEX(index + length, "STS failed!", vm);
+    MVE_ASSERT_STACK_ADDRESS(address, "STS failed!", vm);
+    MVE_ASSERT_STACK_ADDRESS(address + length, "STS failed!", vm);
 
     // Copy the bytes from the register into the stack.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            vm->stack[index + i] = vm->registers.all[reg].b[length - i - 1];
+            vm->stack[address + i] = vm->registers.all[reg].b[length - i - 1];
         #else
-            vm->stack[index + i] = vm->registers.all[reg].b[i];
+            vm->stack[address + i] = vm->registers.all[reg].b[i];
         #endif
     }
 }
@@ -412,7 +412,7 @@ static void mve_op_ldi(MVE_VM *vm)
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            value.b[i] = mve_request_uint8(vm);
+            value.b[sizeof(MVE_Value) - i - 1] = mve_request_uint8(vm);
         #else
             value.b[i] = mve_request_uint8(vm);
         #endif

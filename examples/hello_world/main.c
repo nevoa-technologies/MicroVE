@@ -1,4 +1,7 @@
+#include <stddef.h>
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
 
 #define MVE_EXTERNAL_FUNCTIONS_LIMIT 8
 
@@ -11,7 +14,7 @@
 
 //#define MVE_LOCAL_PROGRAM
 
-#define MVE_ERROR_LOG(vm, program_index, error_id, msg) printf("%s Program index: %u.", msg, program_index);
+//#define MVE_ERROR_LOG(vm, program_index, error_id, msg) printf("%s Program index: %u.", msg, program_index);
 
 //#define MVE_USE_64BIT_TYPES
 //#define MVE_BIG_ENDIAN
@@ -42,9 +45,16 @@ void load_next_block(MVE_VM *vm, uint8_t *buffer, uint32_t read_index, uint32_t 
 
 void hello(MVE_VM *vm) {
 
-    unsigned char c1 = MVE_GET_STACK_UINT8(vm, 1);
+    uint32_t c1 = MVE_GET_STACK_UINT32(vm, 4);
+    printf("Hello: %d. \n", c1);
+}
 
-    printf("Hello: %d. \n", (int) c1);
+
+long currentTimeMillis() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+
+  return time.tv_sec * 1000 + time.tv_usec / 1000;
 }
 
 
@@ -79,6 +89,9 @@ int main() {
     };
 
     MVE_VM vm;
+    
+    clock_t start_time = clock();
+
     mve_init(&vm, &load_next_block);
     //mve_init(&vm, program);
 

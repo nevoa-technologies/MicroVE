@@ -581,3 +581,4 @@ FodyWeavers.xsd
 
 CppProperties.json
 build
+build_linux
