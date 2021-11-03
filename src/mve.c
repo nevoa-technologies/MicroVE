@@ -584,12 +584,17 @@ static void mve_op_cmp(MVE_VM *vm)
 static void mve_op_jmp(MVE_VM *vm) 
 {
     uint8_t reg = mve_request_uint8(vm);
-    MVE_ASSERT_REGISTER(reg, "JMP failed!", vm);
-
     uint32_t index = mve_request_uint32(vm);
 
-    if (vm->registers.all[reg].i)
+    // If the register is 0xFF, then we jump instantly, otherwise we check the value on the register.
+    if (reg == 0xFF) {
         mve_jump_to_program_index(vm, index);
+    } else {
+        MVE_ASSERT_REGISTER(reg, "JMP failed!", vm);
+
+        if (vm->registers.all[reg].i)
+            mve_jump_to_program_index(vm, index);
+    }
 }
 
 
