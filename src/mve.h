@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "defines.h"
+#include "config.h"
 
 
 #define MVE_VERSION_MAJOR ((uint16_t)1) // Bytecode major version. The program must have the same version.
@@ -169,7 +169,10 @@
 #define MVE_GET_STACK_INT64(vm, address) MVE_BYTES_TO_INT64(vm->stack, vm->stack_pointer - address)
 
 
-typedef uint8_t bool;
+#define MVE_TRUE    1
+#define MVE_FALSE   0
+
+typedef uint8_t MVEbool;
 
  
 #ifdef MVE_USE_64BIT_TYPES
@@ -241,7 +244,7 @@ struct MVE_VM {
     uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
 
     uint16_t external_functions_count;
-    bool is_running;
+    MVEbool is_running;
 };
 
 
@@ -253,7 +256,7 @@ struct MVE_VM {
  * @param program Program byte array to execute.
  * @return Returns true if the VM was initiated successfully. False if an error ocurred, such as incompatible byte code.
  */
-bool mve_init(MVE_VM *vm, uint8_t *program);
+MVEbool mve_init(MVE_VM *vm, uint8_t *program);
 #else
 /**
  * @brief Prepares the VM to run. Loads the header of the program and sets up all the required data.
@@ -262,7 +265,7 @@ bool mve_init(MVE_VM *vm, uint8_t *program);
  * @param fun_load_next Function that is going to be called whenever the VM needs to load the next bytes (VM, buffer to load into, index in the program, amount to read).
  * @return Returns true if the VM was initiated successfully. False if an error ocurred, such as incompatible byte code.
  */
-bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t));
+MVEbool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t));
 #endif
 
 /**
@@ -296,7 +299,7 @@ void mve_run(MVE_VM *vm);
  * 
  * @param vm The VM to check if is running.
  */
-bool mve_is_running(MVE_VM *vm);
+MVEbool mve_is_running(MVE_VM *vm);
 
 
 /**

@@ -1,18 +1,14 @@
 #include "mve.h"
 
 
-#define true    1
-#define false   0
-
-
-static inline bool string_equals(const char *str1, const char *str2) 
+static inline MVEbool string_equals(const char *str1, const char *str2) 
 {
     uint16_t i = 0;
 
     while (str1[i] != 0 && str1[i] == str2[i])
     {
         if (str2[i] == 0)
-            return false;
+            return MVE_FALSE;
 
         i++;
     }
@@ -218,16 +214,16 @@ static void mve_load_scope_memory(MVE_VM *vm)
  * 
  * @param vm VM to load the header.
  */
-static bool mve_load_header(MVE_VM *vm) 
+static MVEbool mve_load_header(MVE_VM *vm) 
 {
     uint16_t major_version = MVE_BYTES_TO_UINT16(vm->program_buffer, 0);
     uint16_t minor_version = MVE_BYTES_TO_UINT16(vm->program_buffer, 2);
 
     if (major_version != MVE_VERSION_MAJOR)
-        return false;
+        return MVE_FALSE;
 
     if (minor_version > MVE_VERSION_MINOR)
-        return false;
+        return MVE_FALSE;
 
     vm->buffer_index = 4;
     uint16_t external_functions_length = mve_request_uint32(vm);
@@ -246,7 +242,7 @@ static bool mve_load_header(MVE_VM *vm)
 
     mve_load_scope_memory(vm);
 
-    return true;
+    return MVE_TRUE;
 }
 
 
@@ -698,15 +694,15 @@ static void mve_op_lsr(MVE_VM *vm)
 
 
 #ifdef MVE_LOCAL_PROGRAM
-bool mve_init(MVE_VM *vm, uint8_t *program) 
+MVEbool mve_init(MVE_VM *vm, uint8_t *program) 
 {
     vm->program_buffer = program;
 #else
-bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t)) {
+MVEbool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t)) {
     vm->fun_load_next_block = fun_load_next_block;
 #endif
     vm->program_index = 0;
-    vm->is_running = false;
+    vm->is_running = MVE_FALSE;
     vm->buffer_index = 0;
     vm->stack_pointer = 0;
     vm->scope_index = 0;
@@ -717,7 +713,7 @@ bool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint3
 
     mve_load_next_block(vm);
 
-    bool result = mve_load_header(vm);
+    MVEbool result = mve_load_header(vm);
 
     if (!result)
         MVE_ASSERT(result, vm, MVE_ERROR_INCOMPATIBLE_VERSION, "Incompatible program. Please upgrade your MicroVE into a newer version or compile your program to an old one.");
@@ -754,7 +750,7 @@ void mve_link_function(MVE_VM *vm, const char *name, void (*function) (MVE_VM *)
 
 void mve_start(MVE_VM *vm) 
 {
-    vm->is_running = true;
+    vm->is_running = MVE_TRUE;
 
     // Reset the scopes because they are not set at runtime, unless on CALL instructions.
     // Without this, JMP instructions will misbehave.
@@ -844,14 +840,14 @@ void mve_run(MVE_VM *vm)
         mve_stop(vm);
         break;
     default:
-        MVE_ASSERT(false, vm, MVE_ERROR_UNDEFINED_OP, "Undefined instruction! Code does not exist.");
+        MVE_ASSERT(MVE_FALSE, vm, MVE_ERROR_UNDEFINED_OP, "Undefined instruction! Code does not exist.");
         mve_stop(vm);
         break;
     }
 }
 
 
-bool mve_is_running(MVE_VM *vm) 
+MVEbool mve_is_running(MVE_VM *vm) 
 {
     return vm->is_running;
 }
@@ -859,5 +855,5 @@ bool mve_is_running(MVE_VM *vm)
 
 void mve_stop(MVE_VM *vm) 
 {
-    vm->is_running = false;
+    vm->is_running = MVE_FALSE;
 }
