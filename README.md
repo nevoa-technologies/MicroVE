@@ -31,16 +31,16 @@ At the moment, MicroVE is not usable. The version 1.0 will be released as soon a
 <br>
 
 # Usage
-You just need to add the files: `mve.c`, `mve.h` and `defines.h` (this one you can use to define some macros that are presented below) into your project and it should work. There is no external libraries apart from the standard ones.
+You just need to add the files: `mve.c`, `mve.h` and `config.h` (this one you can use to define some macros that are presented below) into your project and it should work. There is no external libraries apart from the standard ones.
 
 Otherwise, if you use CMake, you can just drag this repository into your project. By default it compiles the examples and a shared and a static library. 
 
 In your CMakeLists file, disable the examples using `set(MICROVE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)`. If you want a static library, disable the shared using `set(MICROVE_BUILD_SHARED_LIB OFF CACHE BOOL "" FORCE)`. But if you want a shared library, disable the static library using `set(MICROVE_BUILD_STATIC_LIB OFF CACHE BOOL "" FORCE)`.
 
-NOTE: If you are using CMake, you need to set the defines (presented below) on the file `defines.h` or `mve.h`. Otherwise they will not be applied unless you include `mve.c` directly from your code and don't include it in the CMakeLists.
+NOTE: If you are using CMake, you need to set the configuration (presented below) on the file `config.h` or `mve.h`. Otherwise they will not be applied unless you include `mve.c` directly from your code and don't include it in the CMakeLists.
 
-## Defines
-You can declare a few defines in your C project to indicate the processor specs and to limit the memory usage.
+## Config
+You can declare a few definitions in your C project to indicate the processor specs and to limit the memory usage.
 | Name	| Default Value | Description	|
 | - | - | -	|
 | `MVE_EXTERNAL_FUNCTIONS_LIMIT` | 8 | The maximum amount of external functions. (External functions are functions from your C project that will be called through your MicroVE program) |
