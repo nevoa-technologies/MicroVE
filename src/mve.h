@@ -63,6 +63,7 @@
 #define MVE_ERROR_REGISTER_OUT_OF_RANGE                 3       // Happens when accessing an invalid register, that is smaller than 0 or bigger than MVE_REGISTERS_LIMIT.
 #define MVE_ERROR_SCOPE_OUT_OF_RANGE                    4       // Happens when creating or deleting a scope that is out of range.
 #define MVE_ERROR_UNRECOGNIZED_CMP_OPERATION            5       // Happens when a compare instruction has an unrecognized operation that is not between 0 and 5.
+#define MVE_ERROR_SCOPE_LIMIT_REACHED                   6       // Happens when the scope stack index surpasses MVE_SCOPE_LIMIT. 
 #define MVE_ERROR_UNDEFINED_OP                          57      // Happens when the OP of the next instruction is not recognized.
 
 
