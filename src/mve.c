@@ -602,8 +602,7 @@ static void mve_op_call(MVE_VM *vm) {
 
     uint32_t index = mve_request_uint32(vm);
 
-    if (vm->scope_index + 1 >= MVE_SCOPE_LIMIT)
-        return;
+    MVE_ASSERT(vm->scope_index + 1 < MVE_SCOPE_LIMIT, "CALL failed! Cannot have more scopes than MVE_SCOPE_LIMIT.", vm);
     
     // Set the program index of the next scope, so after ending the next scope, the VM will go back to this location.
     #ifdef MVE_LOCAL_PROGRAM
