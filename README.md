@@ -88,7 +88,7 @@ int main()
                             MVE_OP_LDI, MVE_R0, 1, 4,
                             MVE_OP_LDI, MVE_R1, 1, 5,
                             MVE_OP_CMP, MVE_CMP_GREATER, MVE_R2, MVE_R0, MVE_R1,
-                            MVE_OP_JMP, MVE_R2, 95, 0, 0, 0,
+                            MVE_OP_JNZ, MVE_R2, 95, 0, 0, 0,
                             MVE_OP_INVOKE, 0, 0,
                             MVE_OP_NOT, MVE_R0, MVE_R0,
                             MVE_OP_EOP
