@@ -84,14 +84,15 @@
 #define MVE_OP_SCOPE                    ((uint8_t) 13)          // Creates a new scope.
 #define MVE_OP_END                      ((uint8_t) 14)          // Finishes the previous scope.
 #define MVE_OP_CMP                      ((uint8_t) 15)          // Compares 2 registers.
-#define MVE_OP_JMP                      ((uint8_t) 16)          // Jumps to a location if the value of the given register is not 0.
-#define MVE_OP_CALL                     ((uint8_t) 17)          // Jumps to a location. Creating and ending a scope will make it return to where it was called.
-#define MVE_OP_AND                      ((uint8_t) 18)          // Logical And. Performs a bitwise AND on 2 registers.
-#define MVE_OP_ORR                      ((uint8_t) 19)          // Logical Or. Performs a bitwise OR on 2 registers.
-#define MVE_OP_NOT                      ((uint8_t) 20)          // Logical Not. Performs a bitwise NOT on 2 registers.
-#define MVE_OP_LSL                      ((uint8_t) 21)          // Logical Shift Left. Performs a bitwise shift left on 2 registers.
-#define MVE_OP_LSR                      ((uint8_t) 22)          // Logical Shift Right. Performs a bitwise shift right on 2 registers.
-#define MVE_OP_XOR                      ((uint8_t) 23)          // Logical Exclusive Or. Performs a bitwise XOR on 2 registers.
+#define MVE_OP_JMP                      ((uint8_t) 16)          // Jumps to a location.
+#define MVE_OP_JNZ                      ((uint8_t) 17)          // Jumps to a location if the value of the given register is not 0.
+#define MVE_OP_CALL                     ((uint8_t) 18)          // Jumps to a location. Creating and ending a scope will make it return to where it was called.
+#define MVE_OP_AND                      ((uint8_t) 19)          // Logical And. Performs a bitwise AND on 2 registers.
+#define MVE_OP_ORR                      ((uint8_t) 20)          // Logical Or. Performs a bitwise OR on 2 registers.
+#define MVE_OP_NOT                      ((uint8_t) 21)          // Logical Not. Performs a bitwise NOT on 2 registers.
+#define MVE_OP_LSL                      ((uint8_t) 22)          // Logical Shift Left. Performs a bitwise shift left on 2 registers.
+#define MVE_OP_LSR                      ((uint8_t) 23)          // Logical Shift Right. Performs a bitwise shift right on 2 registers.
+#define MVE_OP_XOR                      ((uint8_t) 24)          // Logical Exclusive Or. Performs a bitwise XOR on 2 registers.
 
 
 #define MVE_OP_ITOF                     ((uint8_t) 32)
@@ -158,16 +159,16 @@
 #endif
 
 
-#define MVE_GET_STACK(vm, address) (vm->stack + vm->stack_pointer - address)
-#define MVE_GET_STACK_UINT8(vm, address) MVE_BYTES_TO_UINT8(vm->stack, vm->stack_pointer - address)
-#define MVE_GET_STACK_UINT16(vm, address) MVE_BYTES_TO_UINT16(vm->stack, vm->stack_pointer - address)
-#define MVE_GET_STACK_UINT32(vm, address) MVE_BYTES_TO_UINT32(vm->stack, vm->stack_pointer - address)
-#define MVE_GET_STACK_UINT64(vm, address) MVE_BYTES_TO_UINT64(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK(vm, address) (vm->stack + STACK_POINTER(vm) - address)
+#define MVE_GET_STACK_UINT8(vm, address) MVE_BYTES_TO_UINT8(vm->stack, STACK_POINTER(vm) - address)
+#define MVE_GET_STACK_UINT16(vm, address) MVE_BYTES_TO_UINT16(vm->stack, STACK_POINTER(vm) - address)
+#define MVE_GET_STACK_UINT32(vm, address) MVE_BYTES_TO_UINT32(vm->stack, STACK_POINTER(vm) - address)
+#define MVE_GET_STACK_UINT64(vm, address) MVE_BYTES_TO_UINT64(vm->stack, STACK_POINTER(vm) - address)
 
-#define MVE_GET_STACK_INT8(vm, address) MVE_BYTES_TO_INT8(vm->stack, vm->stack_pointer - address)
-#define MVE_GET_STACK_INT16(vm, address) MVE_BYTES_TO_INT16(vm->stack, vm->stack_pointer - address)
-#define MVE_GET_STACK_INT32(vm, address) MVE_BYTES_TO_INT32(vm->stack, vm->stack_pointer - address)
-#define MVE_GET_STACK_INT64(vm, address) MVE_BYTES_TO_INT64(vm->stack, vm->stack_pointer - address)
+#define MVE_GET_STACK_INT8(vm, address) MVE_BYTES_TO_INT8(vm->stack, STACK_POINTER(vm) - address)
+#define MVE_GET_STACK_INT16(vm, address) MVE_BYTES_TO_INT16(vm->stack, STACK_POINTER(vm) - address)
+#define MVE_GET_STACK_INT32(vm, address) MVE_BYTES_TO_INT32(vm->stack, STACK_POINTER(vm) - address)
+#define MVE_GET_STACK_INT64(vm, address) MVE_BYTES_TO_INT64(vm->stack, STACK_POINTER(vm) - address)
 
 
 #define MVE_TRUE    1
@@ -210,7 +211,7 @@ typedef union
         MVE_Value r2;
         MVE_Value r3;
         MVE_Value r4;
-        MVE_Value rr;
+        MVE_Value sp;   // Stack pointer register.
     };
     
     MVE_Value all[6];
@@ -240,13 +241,15 @@ struct MVE_VM {
 
     uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
 
-    uint32_t stack_pointer;
     uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
     uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
 
     uint16_t external_functions_count;
     MVEbool is_running;
 };
+
+
+#define STACK_POINTER(vm) (vm->registers.sp.i)
 
 
 #ifdef MVE_LOCAL_PROGRAM

@@ -202,8 +202,8 @@ static void mve_load_scope_memory(MVE_VM *vm)
     MVE_ASSERT_STACK_ADDRESS(length + vm->stack_pointer < MVE_STACK_SIZE, "Error loading scope memory.", vm);
 
     for (uint32_t i = 0; i < length; i++) {
-        vm->stack[vm->stack_pointer] = mve_request_uint8(vm);
-        vm->stack_pointer++;
+        vm->stack[STACK_POINTER(vm)] = mve_request_uint8(vm);
+        STACK_POINTER(vm)++;
     }
 }
 
@@ -335,7 +335,7 @@ static void mve_op_lds(MVE_VM *vm)
     // If the stack_address is negative then the end of the stack is used.
     // This is used when accessing scope memory.
     if (stack_address < 0)
-        address = vm->stack_pointer - (-stack_address);
+        address = STACK_POINTER(vm) - (-stack_address);
     else
         address = stack_address;
 
@@ -372,7 +372,7 @@ static void mve_op_sts(MVE_VM *vm)
     // If the stack_address is negative then the end of the stack is used.
     // This is used when accessing scope memory.
     if (stack_address < 0)
-        address = vm->stack_pointer - (-stack_address);
+        address = STACK_POINTER(vm) - (-stack_address);
     else
         address = stack_address;
 
@@ -516,7 +516,7 @@ static void mve_op_scope(MVE_VM *vm)
     MVE_ASSERT(vm->scope_index + 1 < MVE_SCOPE_LIMIT, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "SCOPE failed! There cannot be no more scopes than MVE_SCOPE_LIMIT.");
 
     vm->scope_index++;
-    vm->scopes[vm->scope_index].stack_base = vm->stack_pointer;
+    vm->scopes[vm->scope_index].stack_base = STACK_POINTER(vm);
 
     mve_load_scope_memory(vm);
 }
@@ -526,7 +526,7 @@ static void mve_op_end(MVE_VM *vm)
 {
     MVE_ASSERT(vm->scope_index - 1 >= 0, vm, MVE_ERROR_SCOPE_OUT_OF_RANGE, "END failed! There is no scope to end.");
 
-    vm->stack_pointer = vm->scopes[vm->scope_index].stack_base;
+    STACK_POINTER(vm) = vm->scopes[vm->scope_index].stack_base;
 
     uint32_t program_index = vm->scopes[vm->scope_index].program_index;
 
@@ -583,18 +583,20 @@ static void mve_op_cmp(MVE_VM *vm)
 
 static void mve_op_jmp(MVE_VM *vm) 
 {
+    uint32_t index = mve_request_uint32(vm);
+
+    mve_jump_to_program_index(vm, index);
+}
+
+
+static void mve_op_jnz(MVE_VM *vm) 
+{
     uint8_t reg = mve_request_uint8(vm);
     uint32_t index = mve_request_uint32(vm);
 
-    // If the register is 0xFF, then we jump instantly, otherwise we check the value on the register.
-    if (reg == 0xFF) {
+    // Check if value on the register is different than 0 to jump.
+    if (vm->registers.all[reg].i != 0)
         mve_jump_to_program_index(vm, index);
-    } else {
-        MVE_ASSERT_REGISTER(reg, "JMP failed!", vm);
-
-        if (vm->registers.all[reg].i)
-            mve_jump_to_program_index(vm, index);
-    }
 }
 
 
@@ -615,7 +617,7 @@ static void mve_op_call(MVE_VM *vm) {
 }
 
 
-static void mve_op_and(MVE_VM *vm) 
+static void mve_op_and(MVE_VM *vm)
 {
     uint8_t reg_result = mve_request_uint8(vm);
     uint8_t reg_op1 = mve_request_uint8(vm);
@@ -708,7 +710,7 @@ MVEbool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, ui
     vm->program_index = 0;
     vm->is_running = MVE_FALSE;
     vm->buffer_index = 0;
-    vm->stack_pointer = 0;
+    STACK_POINTER(vm) = 0;
     vm->scope_index = 0;
 
     for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
@@ -818,6 +820,9 @@ void mve_run(MVE_VM *vm)
         break;
     case MVE_OP_JMP:
         mve_op_jmp(vm);
+        break;
+    case MVE_OP_JNZ:
+        mve_op_jnz(vm);
         break;
     case MVE_OP_CALL:
         mve_op_call(vm);
