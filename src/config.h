@@ -1,5 +1,5 @@
-#ifndef MVE_DEFINES_H
-#define MVE_DEFINES_H
+#ifndef MVE_CONFIG_H
+#define MVE_CONFIG_H
 
 /**
  * Use this file to define macros for the VM.

@@ -2,6 +2,8 @@
     "C_Cpp.errorSquiggles": "Disabled",
     "files.associations": {
         "time.h": "c",
-        "mve.h": "c"
-    }
+        "mve.h": "c",
+        "type_traits": "c"
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

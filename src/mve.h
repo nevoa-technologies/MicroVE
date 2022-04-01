@@ -35,14 +35,24 @@
 #endif
 
 
-#ifndef MVE_HEAP_SIZE
-#define MVE_HEAP_SIZE 128
+#ifndef MVE_MEMORY_SIZE
+#define MVE_MEMORY_SIZE 128
 #endif
 
 
 #ifndef MVE_SCOPE_LIMIT
 #define MVE_SCOPE_LIMIT 8
 #endif
+
+
+#ifndef MVE_REGISTERS_SIZE
+#define MVE_REGISTERS_SIZE 7
+#endif
+
+#if MVE_REGISTERS_SIZE < 7
+#error "MVE_REGISTERS_SIZE must be 7 or higher."
+#endif
+
 
 #if MVE_SCOPE_LIMIT < 4
 #error MVE_SCOPE_LIMIT must be greater than 4.
@@ -51,19 +61,20 @@
 
 #ifdef MVE_ERROR_LOG
 #define STR(x) #x
-#define MVE_ASSERT(x, vm, error_id, msg) if (!(x)) { MVE_ERROR_LOG(vm, vm->program_index + vm->buffer_index, error_id, "Error " STR(error_id) ": "  msg); abort(); }
+#define MVE_ASSERT(x, vm, error_id, msg) if (!(x)) { MVE_ERROR_LOG(vm, vm->program_index + vm->buffer_index, error_id, "Error " STR(error_id) ": "  msg); while(1) {} }
 #else
-#define MVE_ASSERT(x, vm, error_id, msg) (0)
+#define MVE_ASSERT(x, vm, error_id, msg) (void)0
 #endif
 
 
 #define MVE_ERROR_INCOMPATIBLE_VERSION                  0       // Happens when the program is not not compatible.
 #define MVE_ERROR_STACK_OUT_OF_RANGE                    1       // Happens when trying to access an index bigger than the size of the stack.
 #define MVE_ERROR_EXTERNAL_FUNCTION_OUT_OF_RANGE        2       // Happens when calling an external functions, which index is invalid.
-#define MVE_ERROR_REGISTER_OUT_OF_RANGE                 3       // Happens when accessing an invalid register, that is smaller than 0 or bigger than MVE_REGISTERS_LIMIT.
+#define MVE_ERROR_REGISTER_OUT_OF_RANGE                 3       // Happens when accessing an invalid register, that is smaller than 0 or bigger than MVE_REGISTERS_SIZE.
 #define MVE_ERROR_SCOPE_OUT_OF_RANGE                    4       // Happens when creating or deleting a scope that is out of range.
 #define MVE_ERROR_UNRECOGNIZED_CMP_OPERATION            5       // Happens when a compare instruction has an unrecognized operation that is not between 0 and 5.
 #define MVE_ERROR_SCOPE_LIMIT_REACHED                   6       // Happens when the scope stack index surpasses MVE_SCOPE_LIMIT. 
+#define MVE_ERROR_MEMORY_OUT_OF_RANGE                   7       // Happens when trying to access an index bigger than the size of the memory.
 #define MVE_ERROR_UNDEFINED_OP                          57      // Happens when the OP of the next instruction is not recognized.
 
 
@@ -93,6 +104,8 @@
 #define MVE_OP_LSL                      ((uint8_t) 22)          // Logical Shift Left. Performs a bitwise shift left on 2 registers.
 #define MVE_OP_LSR                      ((uint8_t) 23)          // Logical Shift Right. Performs a bitwise shift right on 2 registers.
 #define MVE_OP_XOR                      ((uint8_t) 24)          // Logical Exclusive Or. Performs a bitwise XOR on 2 registers.
+#define MVE_OP_INC                      ((uint8_t) 25)          // Increment a register.
+#define MVE_OP_DEC                      ((uint8_t) 26)          // Decrement a register.
 
 
 #define MVE_OP_ITOF                     ((uint8_t) 32)
@@ -104,8 +117,9 @@
 #define MVE_OP_FCMP                     ((uint8_t) 38)
 #define MVE_OP_FNEG                     ((uint8_t) 39)
 
-#define MVE_OP_ALLOC                    ((uint8_t) 64)
-#define MVE_OP_FREE                     ((uint8_t) 65)
+#define MVE_OP_PUSH                     ((uint8_t) 64)
+#define MVE_OP_POP                      ((uint8_t) 65)
+#define MVE_OP_LADR                     ((uint8_t) 66)
 
 
 #define MVE_R0                          ((uint8_t) 0)
@@ -125,11 +139,9 @@
 
 
 
-#define MVE_REGISTERS_LIMIT 6
-
-
-#define MVE_ASSERT_REGISTER(reg, msg, vm) MVE_ASSERT(reg >= 0 && reg < MVE_REGISTERS_LIMIT, vm, MVE_ERROR_REGISTER_OUT_OF_RANGE, msg " Invalid register. The register cannot be negative or bigger than MVE_REGISTERS_LIMIT.");
+#define MVE_ASSERT_REGISTER(reg, msg, vm) MVE_ASSERT(reg >= 0 && reg < MVE_REGISTERS_SIZE, vm, MVE_ERROR_REGISTER_OUT_OF_RANGE, msg " Invalid register. The register cannot be negative or bigger than MVE_REGISTERS_SIZE.");
 #define MVE_ASSERT_STACK_ADDRESS(address, msg, vm) MVE_ASSERT(address >= 0 && address < MVE_STACK_SIZE, vm, MVE_ERROR_STACK_OUT_OF_RANGE, msg " Stack address out of range. The address cannot be negative or bigger than MVE_STACK_SIZE.");
+#define MVE_ASSERT_MEMORY_ADDRESS(address, msg, vm) MVE_ASSERT(address >= 0 && address < MVE_MEMORY_SIZE, vm, MVE_ERROR_MEMORY_OUT_OF_RANGE, msg " Memory address out of range. The address cannot be negative or bigger than MVE_MEMORY_SIZE.");
 
 #ifdef MVE_BIG_ENDIAN
 
@@ -159,17 +171,42 @@
 #endif
 
 
-#define MVE_GET_STACK(vm, address) (vm->stack + STACK_POINTER(vm) - address)
-#define MVE_GET_STACK_UINT8(vm, address) MVE_BYTES_TO_UINT8(vm->stack, STACK_POINTER(vm) - address)
-#define MVE_GET_STACK_UINT16(vm, address) MVE_BYTES_TO_UINT16(vm->stack, STACK_POINTER(vm) - address)
-#define MVE_GET_STACK_UINT32(vm, address) MVE_BYTES_TO_UINT32(vm->stack, STACK_POINTER(vm) - address)
-#define MVE_GET_STACK_UINT64(vm, address) MVE_BYTES_TO_UINT64(vm->stack, STACK_POINTER(vm) - address)
+#define STACK_POINTER(vm) (vm->registers.sp.i)
+#define MEMORY_POINTER(vm) (vm->registers.mp.i)
 
-#define MVE_GET_STACK_INT8(vm, address) MVE_BYTES_TO_INT8(vm->stack, STACK_POINTER(vm) - address)
-#define MVE_GET_STACK_INT16(vm, address) MVE_BYTES_TO_INT16(vm->stack, STACK_POINTER(vm) - address)
-#define MVE_GET_STACK_INT32(vm, address) MVE_BYTES_TO_INT32(vm->stack, STACK_POINTER(vm) - address)
-#define MVE_GET_STACK_INT64(vm, address) MVE_BYTES_TO_INT64(vm->stack, STACK_POINTER(vm) - address)
+#define MVE_GET_MEMORY_UINT8(vm, address) MVE_BYTES_TO_UINT8(vm->memory, MEMORY_POINTER(vm) - address)
+#define MVE_GET_MEMORY_UINT16(vm, address) MVE_BYTES_TO_UINT16(vm->memory, MEMORY_POINTER(vm) - address)
+#define MVE_GET_MEMORY_UINT32(vm, address) MVE_BYTES_TO_UINT32(vm->memory, MEMORY_POINTER(vm) - address)
+#define MVE_GET_MEMORY_UINT64(vm, address) MVE_BYTES_TO_UINT64(vm->memory, MEMORY_POINTER(vm) - address)
 
+#define MVE_GET_MEMORY_INT8(vm, address) MVE_BYTES_TO_INT8(vm->memory, MEMORY_POINTER(vm) - address)
+#define MVE_GET_MEMORY_INT16(vm, address) MVE_BYTES_TO_INT16(vm->memory, MEMORY_POINTER(vm) - address)
+#define MVE_GET_MEMORY_INT32(vm, address) MVE_BYTES_TO_INT32(vm->memory, MEMORY_POINTER(vm) - address)
+#define MVE_GET_MEMORY_INT64(vm, address) MVE_BYTES_TO_INT64(vm->memory, MEMORY_POINTER(vm) - address)
+
+
+#define MVE_SET_MEMORY_UINT8(vm, address, value) vm->memory[MEMORY_POINTER(vm) - address] = (uint8_t) value;
+#define MVE_SET_MEMORY_UINT16(vm, address, value) *((uint16_t*)(&(vm->memory[MEMORY_POINTER(vm) - address]))) = (uint16_t) value;
+#define MVE_SET_MEMORY_UINT32(vm, address, value) *((uint32_t*)(&(vm->memory[MEMORY_POINTER(vm) - address]))) = (uint32_t) value;
+#define MVE_SET_MEMORY_UINT64(vm, address, value) *((uint64_t*)(&(vm->memory[MEMORY_POINTER(vm) - address]))) = (uint64_t) value;
+
+#define MVE_SET_MEMORY_INT8(vm, address, value) vm->memory[MEMORY_POINTER(vm) - address] = (int8_t) value;
+#define MVE_SET_MEMORY_INT16(vm, address, value) *((int16_t*)(&(vm->memory[MEMORY_POINTER(vm) - address]))) = (int16_t) value;
+#define MVE_SET_MEMORY_INT32(vm, address, value) *((int32_t*)(&(vm->memory[MEMORY_POINTER(vm) - address]))) = (int32_t) value;
+#define MVE_SET_MEMORY_INT64(vm, address, value) *((int64_t*)(&(vm->memory[MEMORY_POINTER(vm) - address]))) = (int64_t) value;
+
+
+#define MVE_GET_STACK(vm, address) (vm->stack + address)
+#define MVE_GET_RELATIVE_STACK(vm, address) (vm->stack + STACK_POINTER(vm) + address)
+#define MVE_GET_STACK_UINT8(vm, address) MVE_BYTES_TO_UINT8(vm->stack, MEMORY_POINTER(vm) - address)
+#define MVE_GET_STACK_UINT16(vm, address) MVE_BYTES_TO_UINT16(vm->stack, MEMORY_POINTER(vm) - address)
+#define MVE_GET_STACK_UINT32(vm, address) MVE_BYTES_TO_UINT32(vm->stack, MEMORY_POINTER(vm) - address)
+#define MVE_GET_STACK_UINT64(vm, address) MVE_BYTES_TO_UINT64(vm->stack, MEMORY_POINTER(vm) - address)
+
+#define MVE_GET_STACK_INT8(vm, address) MVE_BYTES_TO_INT8(vm->stack, MEMORY_POINTER(vm) - address)
+#define MVE_GET_STACK_INT16(vm, address) MVE_BYTES_TO_INT16(vm->stack, MEMORY_POINTER(vm) - address)
+#define MVE_GET_STACK_INT32(vm, address) MVE_BYTES_TO_INT32(vm->stack, MEMORY_POINTER(vm) - address)
+#define MVE_GET_STACK_INT64(vm, address) MVE_BYTES_TO_INT64(vm->stack, MEMORY_POINTER(vm) - address)
 
 #define MVE_TRUE    1
 #define MVE_FALSE   0
@@ -178,16 +215,21 @@ typedef uint8_t MVEbool;
 
  
 #ifdef MVE_USE_64BIT_TYPES
+#define MVE_BASE_TYPE_SIZE 8
+
 typedef union {
     uint64_t i;
     double f;
-    uint8_t b[8];
+    uint8_t b[MVE_BASE_TYPE_SIZE];
 } MVE_Value;
+
 #else
+#define MVE_BASE_TYPE_SIZE 4
+
 typedef union  {
     uint32_t i;
     float f;
-    uint8_t b[4];
+    uint8_t b[MVE_BASE_TYPE_SIZE];
 } MVE_Value;
 #endif
 
@@ -212,9 +254,10 @@ typedef union
         MVE_Value r3;
         MVE_Value r4;
         MVE_Value sp;   // Stack pointer register.
+        MVE_Value mp;   // Memory pointer register.
     };
     
-    MVE_Value all[6];
+    MVE_Value all[MVE_REGISTERS_SIZE];
 } MVE_Registers;
     
 
@@ -242,14 +285,12 @@ struct MVE_VM {
     uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
 
     uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
-    uint8_t heap[MVE_HEAP_SIZE];                // Stores dynamic data such as function names at the start, and strings during execution.
+    uint8_t memory[MVE_MEMORY_SIZE];                // A stack memory used to manually store and remove values, with PUSH and POP.
 
     uint16_t external_functions_count;
     MVEbool is_running;
 };
 
-
-#define STACK_POINTER(vm) (vm->registers.sp.i)
 
 
 #ifdef MVE_LOCAL_PROGRAM

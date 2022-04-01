@@ -199,7 +199,7 @@ static void mve_load_scope_memory(MVE_VM *vm)
 {
     uint32_t length = mve_request_uint32(vm);
 
-    MVE_ASSERT_STACK_ADDRESS(length + vm->stack_pointer < MVE_STACK_SIZE, "Error loading scope memory.", vm);
+    MVE_ASSERT_STACK_ADDRESS(length + STACK_POINTER(vm), "Error loading scope memory.", vm);
 
     for (uint32_t i = 0; i < length; i++) {
         vm->stack[STACK_POINTER(vm)] = mve_request_uint8(vm);
@@ -231,10 +231,10 @@ static MVEbool mve_load_header(MVE_VM *vm)
     uint8_t strings_counter = 0;
 
     // Load the function names.
-    for (uint32_t i = 0; i < MVE_HEAP_SIZE && strings_counter < external_functions_length; i++) {
-        vm->heap[i] = mve_request_uint8(vm);
+    for (uint32_t i = 0; i < MVE_MEMORY_SIZE && strings_counter < external_functions_length; i++) {
+        vm->memory[i] = mve_request_uint8(vm);
         
-        if (vm->heap[i] == '\0')
+        if (vm->memory[i] == '\0')
             strings_counter++;
     }
 
@@ -264,16 +264,25 @@ static void mve_op_ldr(MVE_VM *vm)
     MVE_Value value;
     value.i = 0;
 
-    uint32_t stack_address = vm->registers.all[reg_index].i;
+    int32_t stack_address = vm->registers.all[reg_index].i;
     uint32_t length = vm->registers.all[reg_length].i;
+
+    uint32_t address = 0;
+
+    // If the stack_address is negative then the end of the stack is used.
+    // This is used when accessing scope memory.
+    if (stack_address < 0)
+        address = STACK_POINTER(vm) - (-stack_address);
+    else
+        address = stack_address;
 
     // Copy the bytes from the stack into the value.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            value.b[length - i - 1] = vm->stack[stack_address + i];
+            value.b[length - i - 1] = vm->stack[address + i];
         #else
-            value.b[i] = vm->stack[stack_address + i];
+            value.b[i] = vm->stack[address + i];
         #endif
     }
 
@@ -286,31 +295,35 @@ static void mve_op_str(MVE_VM *vm)
     // The register to load the value from.
     uint8_t reg = mve_request_uint8(vm);
 
-    MVE_ASSERT_REGISTER(reg, "STR failed!", vm);
-
     // The register that contains the index to load.
     uint8_t reg_index = mve_request_uint8(vm);
 
     // The register that contains the amount o bytes to load.
     uint8_t reg_length = mve_request_uint8(vm);
 
-    MVE_ASSERT_REGISTER(reg, "LDR failed!", vm);
-    MVE_ASSERT_REGISTER(reg_index, "LDR failed!", vm);
-    MVE_ASSERT_REGISTER(reg_length, "LDR failed!", vm);
+    MVE_ASSERT_REGISTER(reg, "STR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_index, "STR failed!", vm);
+    MVE_ASSERT_REGISTER(reg_length, "STR failed!", vm);
 
-    MVE_Value value;
-    value.i = 0;
-
-    uint32_t stack_address = vm->registers.all[reg_index].i;
+    int32_t stack_address = vm->registers.all[reg_index].i;
     uint32_t length = vm->registers.all[reg_length].i;
+
+    uint32_t address = 0;
+
+    // If the stack_address is negative then the end of the stack is used.
+    // This is used when accessing scope memory.
+    if (stack_address < 0)
+        address = STACK_POINTER(vm) - (-stack_address);
+    else
+        address = stack_address;
 
     // Copy the bytes from the register into the stack.
     for (uint8_t i = 0; i < length; i++)
     {
         #ifdef MVE_BIG_ENDIAN
-            vm->stack[stack_address + i] = vm->registers.all[reg].b[length - i - 1];
+            vm->stack[address + i] = vm->registers.all[reg].b[length - i - 1];
         #else
-            vm->stack[stack_address + i] = vm->registers.all[reg].b[i];
+            vm->stack[address + i] = vm->registers.all[reg].b[i];
         #endif
     }
 }
@@ -685,6 +698,26 @@ static void mve_op_xor(MVE_VM *vm)
 }
 
 
+static void mve_op_inc(MVE_VM *vm) 
+{
+    uint8_t reg_op = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_op, "INC failed!", vm);
+
+    vm->registers.all[reg_op].i++;
+}
+
+
+static void mve_op_dec(MVE_VM *vm) 
+{
+    uint8_t reg_op = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg_op, "DEC failed!", vm);
+
+    vm->registers.all[reg_op].i--;
+}
+
+
 static void mve_op_lsr(MVE_VM *vm) 
 {
     uint8_t reg_result = mve_request_uint8(vm);
@@ -696,6 +729,89 @@ static void mve_op_lsr(MVE_VM *vm)
     MVE_ASSERT_REGISTER(reg_op2, "LSR failed!", vm);
 
     vm->registers.all[reg_result].i = vm->registers.all[reg_op1].i >> vm->registers.all[reg_op2].i;
+}
+
+
+static void mve_op_push(MVE_VM *vm) 
+{
+    // The register containing the value.
+    uint8_t reg = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg, "PUSH failed!", vm);
+    
+    // The amount of bytes to write.
+    uint8_t length = mve_request_uint8(vm);
+
+    MVE_ASSERT_MEMORY_ADDRESS(length + MEMORY_POINTER(vm), "PUSH failed!", vm);
+
+    // Copy the bytes from the register into the memory.
+    for (uint8_t i = 0; i < length; i++)
+    {
+        #ifdef MVE_BIG_ENDIAN
+            vm->memory[MEMORY_POINTER(vm) + i] = vm->registers.all[reg].b[length - i - 1];
+        #else
+            vm->memory[MEMORY_POINTER(vm) + i] = vm->registers.all[reg].b[i];
+        #endif
+    }
+
+    MEMORY_POINTER(vm) += length;
+}
+
+
+static void mve_op_pop(MVE_VM *vm) 
+{
+    // The register to receive the value.
+    uint8_t reg = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg, "POP failed!", vm);
+    
+    // The amount of bytes to pop.
+    uint8_t length = mve_request_uint8(vm);
+
+    MVE_ASSERT_MEMORY_ADDRESS(MEMORY_POINTER(vm) - length, "POP failed!", vm);
+
+    uint8_t clamped_length = length < MVE_BASE_TYPE_SIZE ? length : MVE_BASE_TYPE_SIZE; 
+    MVE_Value value;
+    value.i = 0;
+
+
+    // Copy the bytes from the memory into the register.
+    for (uint8_t i = 0; i < clamped_length; i++)
+    {
+        #ifdef MVE_BIG_ENDIAN
+            value.b[i] = vm->memory[MEMORY_POINTER(vm) - i - 1];
+        #else
+            value.b[clamped_length - i - 1] = vm->memory[MEMORY_POINTER(vm) - i - 1]; 
+        #endif
+    }
+
+    MEMORY_POINTER(vm) -= length;
+    vm->registers.all[reg] = value;
+}
+
+
+static void mve_op_ladr(MVE_VM *vm) 
+{
+    // The register to receive the value.
+    uint8_t reg = mve_request_uint8(vm);
+
+    MVE_ASSERT_REGISTER(reg, "LADR failed!", vm);
+    
+    // Address of the stack and length of the bytes.
+    int32_t stack_address = mve_request_int32(vm);
+
+    uint32_t address = 0;
+
+    // If the stack_address is negative then the end of the stack is used.
+    // This is used when accessing scope memory.
+    if (stack_address < 0)
+        address = STACK_POINTER(vm) - (-stack_address);
+    else
+        address = stack_address;
+
+    MVE_ASSERT_STACK_ADDRESS(address, "LADR failed!", vm);
+
+    vm->registers.all[reg].i = address;
 }
 
 
@@ -711,6 +827,7 @@ MVEbool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, ui
     vm->is_running = MVE_FALSE;
     vm->buffer_index = 0;
     STACK_POINTER(vm) = 0;
+    MEMORY_POINTER(vm) = 0;
     vm->scope_index = 0;
 
     for (uint16_t i = 0; i < MVE_EXTERNAL_FUNCTIONS_LIMIT; i++) {
@@ -730,20 +847,20 @@ MVEbool mve_init(MVE_VM *vm, void (*fun_load_next_block)(MVE_VM *, uint8_t *, ui
 
 void mve_link_function(MVE_VM *vm, const char *name, void (*function) (MVE_VM *)) 
 {
-    uint32_t heap_index = 0;
+    uint32_t memory_index = 0;
     uint16_t function_index = 0;
 
     for (uint16_t i = 0; i < vm->external_functions_count; i++) {
 
-        uint32_t start = heap_index;
+        uint32_t start = memory_index;
 
-        while (vm->heap[heap_index] != '\0') {
-            heap_index++;
+        while (vm->memory[memory_index] != '\0') {
+            memory_index++;
         } 
 
-        heap_index++;
+        memory_index++;
 
-        if (string_equals((const char *) vm->heap + start, name))
+        if (string_equals((const char *) vm->memory + start, name))
         {
             vm->external_functions[function_index] = function;
             return;
@@ -844,6 +961,21 @@ void mve_run(MVE_VM *vm)
         break;
     case MVE_OP_XOR:
         mve_op_xor(vm);
+        break;
+    case MVE_OP_INC:
+        mve_op_inc(vm);
+        break;
+    case MVE_OP_DEC:
+        mve_op_dec(vm);
+        break;
+    case MVE_OP_PUSH:
+        mve_op_push(vm);
+        break;
+    case MVE_OP_POP:
+        mve_op_pop(vm);
+        break;
+    case MVE_OP_LADR:
+        mve_op_ladr(vm);
         break;
     case MVE_OP_EOP:
         mve_stop(vm);
