@@ -117,9 +117,9 @@
 #define MVE_OP_FCMP                     ((uint8_t) 38)
 #define MVE_OP_FNEG                     ((uint8_t) 39)
 
-#define MVE_OP_PUSH                     ((uint8_t) 64)
-#define MVE_OP_POP                      ((uint8_t) 65)
-#define MVE_OP_LADR                     ((uint8_t) 66)
+#define MVE_OP_PUSH                     ((uint8_t) 64)          // Push a value from a register into the stack.
+#define MVE_OP_POP                      ((uint8_t) 65)          // Pop a value from the stack into a register.
+#define MVE_OP_LADR                     ((uint8_t) 66)          // Puts the absolute memory address of a local memory chunk in a register.
 
 
 #define MVE_R0                          ((uint8_t) 0)
@@ -263,9 +263,9 @@ typedef union
 
 struct MVE_VM {
 
-    MVE_Registers registers;        // Contains the registers of the virtual machine.
-                                    // The first one is used to store the result from operations and also the returned value from functions.
-                                    // The others can be used to general purpose.
+    MVE_Registers registers;                    // Contains the registers of the virtual machine.
+                                                // The first one is used to store the result from operations and also the returned value from functions.
+                                                // The others can be used to general purpose.
 
     void (*fun_load_next_block)(MVE_VM *, uint8_t *, uint32_t, uint32_t);
 
@@ -273,19 +273,19 @@ struct MVE_VM {
 
     uint32_t buffer_index;                      // The current position in the program buffer.
 
-    uint32_t scope_index;                                  // The current scope index.
-    MVE_Scope_Info scopes[MVE_SCOPE_LIMIT];       // Used to know where it was when calling contexts.
+    uint32_t scope_index;                       // The current scope index.
+    MVE_Scope_Info scopes[MVE_SCOPE_LIMIT];     // Used to know where it was when calling contexts.
 
 #ifdef MVE_LOCAL_PROGRAM
-    uint8_t *program_buffer;    // Buffer to store the next instructions of the program to be processed.
+    uint8_t *program_buffer;                    // Buffer to store the next instructions of the program to be processed.
 #else
     uint8_t program_buffer[MVE_BUFFER_SIZE];    // Buffer to store the next instructions of the program to be processed.
 #endif
 
-    uint32_t program_index;         // The position in the program that is executing. This is only updated when loading the next bytes of the program.
+    uint32_t program_index;                     // The position in the program that is executing. This is only updated when loading the next bytes of the program.
 
-    uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, such as int variables.
-    uint8_t memory[MVE_MEMORY_SIZE];                // A stack memory used to manually store and remove values, with PUSH and POP.
+    uint8_t stack[MVE_STACK_SIZE];              // Stores fixed size data, managed by the scope.
+    uint8_t memory[MVE_MEMORY_SIZE];            // A stack memory used to manually store and remove values, with PUSH and POP.
 
     uint16_t external_functions_count;
     MVEbool is_running;
