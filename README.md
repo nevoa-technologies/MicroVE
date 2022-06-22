@@ -3,29 +3,43 @@
 [![CMake](https://github.com/nevoa-technologies/MicroVE/actions/workflows/cmake.yml/badge.svg?branch=master)](https://github.com/nevoa-technologies/MicroVE/actions/workflows/cmake.yml)
 
 # A Virtual Environment for Embedded Systems.
-MicroVE aims a lightweight solution for a dynamic code execution on limited devices. All the memory usage is limited at compile-time, so there is no runtime memory allocation. This allows you to run a program under **500 bytes** of RAM (excluding the program itself). The main purpose is to be added to a project and run under a microcontroller, but it can also be embeddable into any other kind of project such as a game or a webserver (Although it may lose kind of its purpose in that environments).
+MicroVE aims a lightweight solution for a dynamic code execution on constrained devices. All the memory usage is limited at compile-time, so there is no runtime memory allocation. This allows you to run a VM instance under **500 bytes** of RAM. The main purpose is to be added to a project and run under a microcontroller, but it can also be embeddable into any other kind of project such as a game or a webserver (Although it may lose kind of its purpose in that environments).
 
-A program file contains the entire bytecode to be interpreted by the Virtual Machine. If you plan to use this in an embedded environment and your compiled bytecode is over your remainded size, you may consider saving it into an external storage like an SPI EEPROM. MicroVE does not load the entire program into the memory, it loads as it needs, so you can load always 64 bytes at a time, if you want.
+A program file contains the entire bytecode to be interpreted by the Virtual Machine. If you plan to use this in an embedded environment and your compiled bytecode is over your remainded size, you may consider saving it into an external storage device. MicroVE does not load the entire program into the memory, it loads as it needs, so you can load just 64 bytes at a time, if you want.
 
 MicroVE has its own bytecode, and this repository contains a base Virtual Machine to execute it. Later, a compiler will be developed to compile programmer-friendly code into executable bytecode.
 
+# Features
+
+- **You have full control:** The VM runs inside your program and it's up to you to decide when to start, stop or run. You can even have multiple VMs running different programs.
+```c
+    while (mve_is_running(&vm)) {
+        mve_run(&vm);
+    }
+```
+- **Extremely small and portable:** MicroVE has no standard library. Everything is up to you, but it provides an easy way to interact with your project, using *external functions*. It can fit almost anywhere, requiring just 1Kb of program storage space and 500 bytes of RAM (This may not be accurate due to future changes).
+- **Runtime program chunk load:** The program can be loaded by blocks. So, instead of reading the entire program into memory, it's possible to load just 32 bytes at a time (the amount is configurable).
+- **Easy runtime program update:** An update can easly be achieved by just stopping the VM, change the program, and start the VM again. Without needing to restart the system.
+- **Assertions:** An assertion error halts the VM. The most common one may be indices out of bounds. Assertions provide an easy way to identify where the crash occurs, which can later be helpful to identify the problem.
+```c
+#define MVE_ERROR_LOG(vm, program_index, error_id, msg) printf("Error: %s At: %u.", msg, program_index);
+```
 <br>
 
 # Progress for the first release
-At the moment, MicroVE is not usable. The version 1.0 will be released as soon as the points are all completed.
+At the moment, MicroVE is usable! Although, the version 1.0 is not released yet due to design decisions of floating point operations.
 - [x] Read program blocks when needed
 - [x] Interpret the program header
 - [x] Link C functions into the virtual machine
 - Execution
     - [x] Reserve and populate stack memory
     - [x] Load values from the stack into registers and from registers into the stack
-    - [x] Call external linked functions
+    - [x] Call external linked functions and send/receive values
     - [x] Basic arithmetic operations (sum, subtraction, multiplication and division)
     - [x] Scopes
     - [x] Comparsions and logical operators
     - [x] Jumps and scope branching
-    - [ ] Floating point values
-    - [ ] Heap management (allocate memory in the VM's heap to store data such as strings)
+    - [ ] Floating point operations (This may not be implemented anytime soon due to current design decisions.)
 
 
 <br>
