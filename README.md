@@ -20,7 +20,7 @@ MicroVE has its own bytecode, and this repository contains a base Virtual Machin
 - **Extremely small and portable:** MicroVE has no standard library. Everything is up to you, but it provides an easy way to interact with your project, using *external functions*. It can fit almost anywhere, requiring just 1Kb of program storage space and 500 bytes of RAM (This may not be accurate due to future changes).
 - **Runtime program chunk load:** The program can be loaded by blocks. So, instead of reading the entire program into memory, it's possible to load just 32 bytes at a time (the amount is configurable).
 - **Easy runtime program update:** An update can easly be achieved by just stopping the VM, change the program, and start the VM again. Without needing to restart the system.
-- **Assertions:** An assertion error halts the VM. The most common one may be indices out of bounds. Assertions provide an easy way to identify where the crash occurs, which can later be helpful to identify the problem.
+- **Assertions:** An assertion error calls `MVE_ERROR_LOG`, which can be used to halt the VM. The most common one may be indices out of bounds. Assertions provide an easy way to identify where the crash occurs, which can later be helpful to identify the problem.
 ```c
 #define MVE_ERROR_LOG(vm, program_index, error_id, msg) printf("Error: %s At: %u.", msg, program_index);
 ```
